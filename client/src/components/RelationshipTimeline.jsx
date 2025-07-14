@@ -1,5 +1,6 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import EventModal from "./EventModal";
 
 const EVENT_COLORS = {
   MEETING: "#FFDF6E",
@@ -12,32 +13,209 @@ const EVENT_COLORS = {
   NOW: "#FFFFFF",
 };
 
-export default function RelationshipTimeline({ events = [] }) {
-  return (
-    <div className="w-full flex justify-center py-6">
-      <div className="relative flex flex-col items-start w-full max-w-md min-h-full">
-        {/* Vertical line: left column */}
-        <div className="absolute left-7 top-0 bottom-0 w-1 bg-bg-deep/40 opacity-60 z-0" style={{height: '100%'}} />
-        <div className="flex flex-col-reverse gap-12 w-full z-10 justify-between min-h-[400px]">
-          {events.map((event, idx) => (
-            <TimelineNode
-              key={event.id}
-              event={event}
-              color={EVENT_COLORS[event.type] || EVENT_COLORS.NOW}
-            />
-          ))}
+export default function RelationshipTimeline({ events = [], onEventsChange }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [modalMode, setModalMode] = useState("add"); // "add" or "edit" or "view"
+
+  // Sort events by date (oldest first, newest last)
+  const sortedEvents = [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  const handleAddEvent = () => {
+    setSelectedEvent(null);
+    setModalMode("add");
+    setModalOpen(true);
+  };
+
+  const handleEditEvent = (event) => {
+    setSelectedEvent(event);
+    setModalMode("edit");
+    setModalOpen(true);
+  };
+
+  const handleViewEvent = (event) => {
+    setSelectedEvent(event);
+    setModalMode("view");
+    setModalOpen(true);
+  };
+
+  const handleModeChange = (newMode) => {
+    setModalMode(newMode);
+  };
+
+  const handleSaveEvent = (eventData) => {
+    if (modalMode === "add") {
+      const newEvents = [...events, eventData];
+      onEventsChange?.(newEvents);
+    } else if (modalMode === "edit") {
+      const newEvents = events.map(e => e.id === eventData.id ? eventData : e);
+      onEventsChange?.(newEvents);
+    }
+  };
+
+  const handleDeleteEvent = (eventId) => {
+    const newEvents = events.filter(e => e.id !== eventId);
+    onEventsChange?.(newEvents);
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  // Empty state
+  if (events.length === 0) {
+    return (
+      <>
+        <div className="w-full flex justify-center py-12">
+          <div className="text-center max-w-sm">
+            <div className="text-6xl mb-4">🕊️</div>
+            <h3 className="text-lg font-medium text-white/80 mb-2">
+              No memories here yet…
+            </h3>
+            <p className="text-sm text-white/60 mb-6">
+              Start your story with the first meeting.
+            </p>
+            <button
+              onClick={handleAddEvent}
+              className="px-6 py-3 bg-ruby-accent text-white rounded-full hover:bg-ruby-accent/90 transition-colors font-medium"
+            >
+              ✨ Add First Meeting
+            </button>
+          </div>
         </div>
+
+        {/* Event Modal for empty state */}
+        <EventModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSave={handleSaveEvent}
+          onDelete={null}
+          event={selectedEvent}
+          mode={modalMode}
+          onModeChange={handleModeChange}
+        />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className="w-full flex justify-center py-6">
+        <div className="relative flex flex-col items-start w-full max-w-md min-h-full">
+          {/* Vertical line - dynamic height based on content */}
+          <div 
+            className="absolute left-9 w-1 bg-white/20 opacity-60 z-0" 
+            style={{
+              top: '4rem', // Start after Add Event node
+              height: `${Math.max(400, (sortedEvents.length + 1) * 104)}px` // Dynamic height
+            }} 
+          />
+          
+          <div className="flex flex-col gap-8 w-full z-10 justify-start min-h-[400px]">
+            {/* Add Event Node (at the very top) */}
+            <AddEventNode onClick={handleAddEvent} />
+            
+            {/* Timeline Events (sorted chronologically, newest first) */}
+            <AnimatePresence mode="popLayout">
+              {[...sortedEvents].reverse().map((event, idx) => (
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, x: -50, scale: 0.8 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  exit={{ opacity: 0, x: 50, scale: 0.8 }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 300, 
+                    damping: 25,
+                    delay: idx * 0.1 
+                  }}
+                  layout
+                >
+                  <TimelineNode
+                    event={event}
+                    color={EVENT_COLORS[event.type] || EVENT_COLORS.NOW}
+                    onEdit={() => handleEditEvent(event)}
+                    onView={() => handleViewEvent(event)}
+                    formatDate={formatDate}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+
+      {/* Event Modal */}
+      <EventModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleSaveEvent}
+        onDelete={modalMode === "edit" ? handleDeleteEvent : null}
+        event={selectedEvent}
+        mode={modalMode}
+        onModeChange={handleModeChange}
+      />
+    </>
+  );
+}
+
+function AddEventNode({ onClick }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div className="flex flex-row items-center w-full group cursor-pointer relative select-none">
+      {/* The add button node */}
+      <div className="flex flex-col items-center justify-center w-20 relative">
+        <motion.button
+          className="relative z-10 w-16 h-16 rounded-full border-4 border-white/30 border-dashed bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+          initial={false}
+          animate={{ scale: hovered ? 1.12 : 1 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          onClick={onClick}
+        >
+          <span className="text-3xl text-white/70">➕</span>
+        </motion.button>
+      </div>
+      
+      {/* Label */}
+      <div className="flex flex-col min-w-0 ml-4 flex-1">
+        <span className="text-base font-medium text-white/60 text-left">
+          Add Event
+        </span>
+        <motion.span
+          className="text-sm text-white/40 mt-1 text-left w-full"
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: hovered ? 1 : 0, y: hovered ? 0 : -4 }}
+          transition={{ duration: 0.2 }}
+          style={{ pointerEvents: "none" }}
+        >
+          Create a new memory
+        </motion.span>
       </div>
     </div>
   );
 }
 
-function TimelineNode({ event, color }) {
-  const [hovered, setHovered] = React.useState(false);
+function TimelineNode({ event, color, onEdit, onView, formatDate }) {
+  const [hovered, setHovered] = useState(false);
+  
+  const handleClick = () => {
+    if (onView) {
+      onView(event);
+    }
+  };
+
   return (
     <div className="flex flex-row items-center w-full group cursor-pointer relative select-none">
       {/* The line and the nodes */}
-      <div className="flex flex-col items-center justify-center w-16 relative">
+      <div className="flex flex-col items-center justify-center w-20 relative">
         <motion.div
           className="relative z-10"
           initial={false}
@@ -45,10 +223,11 @@ function TimelineNode({ event, color }) {
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
+          onClick={handleClick}
         >
           {event.imageUrl ? (
             <span
-              className="block w-14 h-14 rounded-full border-4 shadow-lg border-white flex items-center justify-center overflow-hidden"
+              className="block w-16 h-16 rounded-full border-4 shadow-lg border-white flex items-center justify-center overflow-hidden"
               style={{ background: color }}
             >
               <img
@@ -59,27 +238,39 @@ function TimelineNode({ event, color }) {
             </span>
           ) : (
             <span
-              className="block w-14 h-14 rounded-full border-4 shadow-lg border-white flex items-center justify-center"
+              className="block w-16 h-16 rounded-full border-4 shadow-lg border-white flex items-center justify-center"
               style={{ background: color }}
-            />
+            >
+              {/* Event type emoji */}
+              <span className="text-2xl">
+                {event.type === 'MEETING' && '💕'}
+                {event.type === 'TRIP' && '✈️'}
+                {event.type === 'PARTY' && '🎉'}
+                {event.type === 'BIRTHDAY' && '🎂'}
+                {event.type === 'ANNIVERSARY' && '💐'}
+                {event.type === 'DATE' && '💖'}
+                {event.type === 'FIGHT_MAKEUP' && '🕊️'}
+              </span>
+            </span>
           )}
         </motion.div>
       </div>
-      {/* Title and date column*/}
+      
+      {/* Title and date column */}
       <div className="flex flex-col min-w-0 ml-4 flex-1">
-        <span className="text-sm font-medium truncate w-full text-bg-deep text-left">
+        <span className="text-base font-semibold truncate w-full text-white text-left">
           {event.title}
         </span>
         <motion.span
-          className="text-xs text-bg-deep/70 mt-1 text-left w-full"
+          className="text-sm text-white/70 mt-1 text-left w-full"
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: hovered ? 1 : 0, y: hovered ? 0 : -4 }}
           transition={{ duration: 0.2 }}
           style={{ pointerEvents: "none" }}
         >
-          {event.date}
+          {formatDate(event.date)}
         </motion.span>
       </div>
     </div>
   );
-} 
+}
