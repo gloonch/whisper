@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 
-function DateSelector({ events = [], onDateSelect, selectedDate }) {
+function DateSelector({ events = [], whispers = [], onDateSelect, selectedDate }) {
   // Generate 5 days: 2 before today, today, 2 after today
   const dates = useMemo(() => {
     const today = new Date();
@@ -22,6 +22,33 @@ function DateSelector({ events = [], onDateSelect, selectedDate }) {
     return events.filter(event => 
       event.date && event.date.startsWith(dateString)
     );
+  };
+
+  // Get whispers for a specific date
+  const getWhispersForDate = (date) => {
+    const dateString = date.toISOString().split('T')[0];
+    
+    return whispers.filter(whisper => {
+      // Include whispers specifically for this date
+      if (whisper.date === dateString) {
+        return true;
+      }
+      
+      // Include everyday whispers if they're active
+      if (whisper.recurrence === 'everyday') {
+        const whisperDate = new Date(whisper.date);
+        return whisperDate <= date;
+      }
+      
+      return false;
+    });
+  };
+
+  // Check if date has any content (events or whispers)
+  const hasContentForDate = (date) => {
+    const eventsCount = getEventsForDate(date).length;
+    const whispersCount = getWhispersForDate(date).length;
+    return eventsCount > 0 || whispersCount > 0;
   };
 
   // Check if date is today
@@ -55,7 +82,7 @@ function DateSelector({ events = [], onDateSelect, selectedDate }) {
       <div className="flex justify-between items-center">
         {dates.map((date, index) => {
           const { dayName, dayNumber } = formatDate(date);
-          const hasEvents = getEventsForDate(date).length > 0;
+          const hasContent = hasContentForDate(date);
           const todayFlag = isToday(date);
           const selected = isSelected(date);
 
@@ -97,8 +124,8 @@ function DateSelector({ events = [], onDateSelect, selectedDate }) {
                 )}
               </div>
 
-              {/* Event indicator dot */}
-              {hasEvents && (
+              {/* Content indicator dot */}
+              {hasContent && (
                 <motion.div
                   className="absolute -bottom-1 w-2 h-2 bg-ruby-accent rounded-full"
                   initial={{ scale: 0 }}

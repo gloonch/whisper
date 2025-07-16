@@ -1,105 +1,132 @@
 import React, { useState } from "react";
 import ProfileNavbar from "../components/ProfileNavbar";
 import DateSelector from "../components/DateSelector";
-import EventsList from "../components/EventsList";
-import EventModal from "../components/EventModal";
+import MemoryEvents from "../components/MemoryEvents";
+import WhispersList from "../components/WhispersList";
+import WhisperModal from "../components/WhisperModal";
+import { createWhisperData } from "../components/WhisperTypes";
 
 // Sample events data - in real app this would come from RelationshipTimeline
 const getTodayBasedEvents = () => {
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
   
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  // ایجاد eventهای نمونه برای سال‌های مختلف در همین روز
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth();
+  const currentDay = today.getDate();
   
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().split('T')[0];
-
   return [
     {
       id: "1",
-      date: todayStr,
-      type: "MEETING",
-      title: "First Meeting",
-      imageUrl: "https://placehold.co/64x64/FFDF6E/18181c?text=👋",
+      date: new Date(currentYear - 1, currentMonth, currentDay).toISOString().split('T')[0],
+      type: "BIRTHDAY",
+      title: "Birthday",
     },
     {
-      id: "2",
-      date: tomorrowStr,
-      type: "DATE",
-      title: "Coffee Date",
-      imageUrl: "",
+      id: "2", 
+      date: new Date(currentYear - 2, currentMonth, currentDay).toISOString().split('T')[0],
+      type: "TRIP",
+      title: "Trip to North",
     },
     {
       id: "3",
-      date: yesterdayStr,
-      type: "ANNIVERSARY",
-      title: "6 Month Anniversary",
-      imageUrl: "",
+      date: todayStr,
+      type: "ANNIVERSARY", 
+      title: "First Date Anniversary",
     },
   ];
 };
 
 function Whispers() {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedEvents, setSelectedEvents] = useState([]);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [whisperModalOpen, setWhisperModalOpen] = useState(false);
   const [events, setEvents] = useState(getTodayBasedEvents());
+  const [whispers, setWhispers] = useState([
+    // Sample whispers for testing
+    createWhisperData({
+      type: "drink_water",
+      target: "self",
+      recurrence: "everyday",
+      date: new Date().toISOString().split('T')[0]
+    }),
+    createWhisperData({
+      type: "hug_partner", 
+      target: "partner",
+      recurrence: "once",
+      date: new Date().toISOString().split('T')[0]
+    })
+  ]);
 
-  const handleDateSelect = (date, eventsForDate) => {
+  const handleDateSelect = (date) => {
     setSelectedDate(date);
-    setSelectedEvents(eventsForDate);
   };
 
-  const handleAddEvent = () => {
-    setModalOpen(true);
+  // Whisper handlers
+  const handleAddWhisper = () => {
+    setWhisperModalOpen(true);
   };
 
-  const handleSaveEvent = (eventData) => {
-    // Set date to selected date if adding new event
-    const newEvent = {
-      ...eventData,
-      date: selectedDate.toISOString().split('T')[0]
+  const handleSaveWhisper = (whisperData) => {
+    const newWhispers = [...whispers, whisperData];
+    setWhispers(newWhispers);
+    console.log("Whisper added:", whisperData);
+  };
+
+  const handleMarkWhisperDone = (whisperId) => {
+    const newWhispers = whispers.map(whisper => 
+      whisper.id === whisperId 
+        ? { ...whisper, isDone: !whisper.isDone }
+        : whisper
+    );
+    setWhispers(newWhispers);
+  };
+
+  const handleConvertWhisperToEvent = (whisper) => {
+    if (!whisper.canBecomeEvent || !whisper.isDone) return;
+
+    // Create event from whisper
+    const eventData = {
+      id: `event_from_whisper_${Date.now()}`,
+      title: whisper.text,
+      date: whisper.date,
+      type: "DATE", // Default event type
     };
-    
-    const newEvents = [...events, newEvent];
+
+    const newEvents = [...events, eventData];
     setEvents(newEvents);
-    
-    // Update selected events if they match the current date
-    if (selectedDate.toISOString().split('T')[0] === newEvent.date) {
-      setSelectedEvents([...selectedEvents, newEvent]);
-    }
+
+    console.log("Whisper converted to event:", eventData);
   };
 
-  const handleDeleteEvent = (eventId) => {
-    const newEvents = events.filter(e => e.id !== eventId);
-    setEvents(newEvents);
-    setSelectedEvents(selectedEvents.filter(e => e.id !== eventId));
+  const handleDeleteWhisper = (whisperId) => {
+    const newWhispers = whispers.filter(w => w.id !== whisperId);
+    setWhispers(newWhispers);
   };
 
-  // Initialize with today's events
+  // فیلتر کردن eventهای مربوط به روز انتخاب شده (در همه سال‌ها)
+  const getEventsForSelectedDay = () => {
+    const selectedMonth = selectedDate.getMonth();
+    const selectedDay = selectedDate.getDate();
+    
+    return events.filter(event => {
+      const eventDate = new Date(event.date);
+      return eventDate.getMonth() === selectedMonth && 
+             eventDate.getDate() === selectedDay;
+    });
+  };
+
+  // Initialize with today's date
   React.useEffect(() => {
     const today = new Date();
-    const todayString = today.toISOString().split('T')[0];
-    const todayEvents = events.filter(event => 
-      event.date && event.date.startsWith(todayString)
-    );
     setSelectedDate(today);
-    setSelectedEvents(todayEvents);
-  }, [events]);
+  }, []);
+
+  const memoryEvents = getEventsForSelectedDay();
 
   return (
     <div className="flex flex-col h-full bg-bg-deep">
       {/* Profile Navbar */}
-
-      {/* Page Title
-      <div className="px-4 py-4">
-        <h1 className="text-2xl font-bold text-white mb-2">Whispers</h1>
-        <p className="text-white/60 text-sm">Your shared moments and memories</p>
-      </div> */}
-
       <ProfileNavbar 
         name="Mahdi"
         username="@gloonch"
@@ -109,29 +136,33 @@ function Whispers() {
       {/* Date Selector */}
       <DateSelector 
         events={events}
+        whispers={whispers}
         onDateSelect={handleDateSelect}
         selectedDate={selectedDate}
       />
 
-      {/* Events List */}
+      {/* Content Area */}
       <div className="flex-1 overflow-y-auto">
-        <EventsList 
-          events={selectedEvents}
+        {/* Whispers List - بالای صفحه */}
+        <WhispersList
+          whispers={whispers}
           selectedDate={selectedDate}
-          onAddEvent={handleAddEvent}
+          onMarkDone={handleMarkWhisperDone}
+          onConvertToEvent={handleConvertWhisperToEvent}
+          onDeleteWhisper={handleDeleteWhisper}
+          onAddWhisper={handleAddWhisper}
         />
+
+        {/* Memory Events - پایین‌تر از whispers */}
+        <MemoryEvents events={memoryEvents} />
       </div>
 
-      {/* Event Modal */}
-      <EventModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSave={handleSaveEvent}
-        onDelete={handleDeleteEvent}
-        event={null}
-        mode="add"
-        prefilledDate={selectedDate}
-        hideDate={true}
+      {/* Whisper Modal */}
+      <WhisperModal
+        isOpen={whisperModalOpen}
+        onClose={() => setWhisperModalOpen(false)}
+        onSave={handleSaveWhisper}
+        selectedDate={selectedDate}
       />
     </div>
   );
