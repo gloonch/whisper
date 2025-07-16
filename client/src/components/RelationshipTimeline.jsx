@@ -98,6 +98,8 @@ export default function RelationshipTimeline({ events = [], onEventsChange }) {
           event={selectedEvent}
           mode={modalMode}
           onModeChange={handleModeChange}
+          prefilledDate={null}
+          hideDate={false}
         />
       </>
     );
@@ -159,6 +161,8 @@ export default function RelationshipTimeline({ events = [], onEventsChange }) {
         event={selectedEvent}
         mode={modalMode}
         onModeChange={handleModeChange}
+        prefilledDate={null}
+        hideDate={false}
       />
     </>
   );

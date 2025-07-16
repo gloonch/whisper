@@ -18,7 +18,9 @@ export default function EventModal({
   onDelete, 
   event = null, // null for add mode, event object for edit/view mode
   mode = "add", // "add", "edit", or "view"
-  onModeChange
+  onModeChange,
+  prefilledDate = null, // Date prefilled from DateSelector (for Whispers page)
+  hideDate = false // Hide date input when opened from specific date context
 }) {
   const [formData, setFormData] = useState({
     title: "",
@@ -54,9 +56,14 @@ export default function EventModal({
           setUploadedImage(null);
         }
       } else {
+        // Add mode - check if date is prefilled from DateSelector
+        const initialDate = prefilledDate 
+          ? prefilledDate.toISOString().split('T')[0]
+          : "";
+          
         setFormData({
           title: "",
-          date: "",
+          date: initialDate,
           type: "DATE",
           imageUrl: "",
         });
@@ -65,7 +72,7 @@ export default function EventModal({
       setErrors({});
       setIsDeleting(false);
     }
-  }, [isOpen, event, mode, isEditMode, isViewMode]);
+  }, [isOpen, event, mode, isEditMode, isViewMode, prefilledDate]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -74,15 +81,18 @@ export default function EventModal({
       newErrors.title = "Title is required";
     }
     
-    if (!formData.date) {
-      newErrors.date = "Date is required";
-    } else {
-      const selectedDate = new Date(formData.date);
-      const today = new Date();
-      today.setHours(23, 59, 59, 999); // End of today
-      
-      if (selectedDate > today) {
-        newErrors.date = "Date cannot be in the future";
+    // Only validate date if it's not prefilled (when date input is shown)
+    if (!hideDate || !prefilledDate) {
+      if (!formData.date) {
+        newErrors.date = "Date is required";
+      } else {
+        const selectedDate = new Date(formData.date);
+        const today = new Date();
+        today.setHours(23, 59, 59, 999); // End of today
+        
+        if (selectedDate > today) {
+          newErrors.date = "Date cannot be in the future";
+        }
       }
     }
     
@@ -303,21 +313,40 @@ export default function EventModal({
               {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
             </div>
 
-            {/* Date */}
-            <div>
-              <label className="block text-sm font-medium text-bg-deep mb-2">
-                Date *
-              </label>
-              <input
-                type="date"
-                value={formatDateForInput(formData.date)}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ruby-accent ${
-                  errors.date ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date}</p>}
-            </div>
+            {/* Date - Hidden when opened from specific date context */}
+            {!hideDate && (
+              <div>
+                <label className="block text-sm font-medium text-bg-deep mb-2">
+                  Date *
+                </label>
+                <input
+                  type="date"
+                  value={formatDateForInput(formData.date)}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ruby-accent ${
+                    errors.date ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date}</p>}
+              </div>
+            )}
+
+            {/* Show selected date info when date input is hidden */}
+            {hideDate && prefilledDate && (
+              <div className="p-3 bg-gray-50 rounded-lg border">
+                <label className="block text-sm font-medium text-bg-deep mb-1">
+                  Selected Date
+                </label>
+                <p className="text-gray-700 font-medium">
+                  {prefilledDate.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </p>
+              </div>
+            )}
 
             {/* Event Type */}
             <div>

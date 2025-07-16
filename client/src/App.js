@@ -3,7 +3,6 @@ import MobileContainer from "./MobileContainer";
 import Navbar from "./components/Navbar";
 import Us from "./pages/Us";
 import Whispers from "./pages/Whispers";
-import Dates from "./pages/Dates";
 import Me from "./pages/Me";
 
 function App() {
@@ -16,7 +15,6 @@ function App() {
               <Routes>
                 <Route path="/" element={<Us />} />
                 <Route path="/whispers" element={<Whispers />} />
-                <Route path="/dates" element={<Dates />} />
                 <Route path="/me" element={<Me />} />
               </Routes>
             </div>
