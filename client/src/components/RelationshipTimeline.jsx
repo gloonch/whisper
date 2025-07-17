@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import EventModal from "./EventModal";
 
@@ -10,10 +10,11 @@ const EVENT_COLORS = {
   ANNIVERSARY: "#FF9A3C",
   DATE: "#7CE38B",
   FIGHT_MAKEUP: "#9D9D9D",
+  TODO_COMPLETED: "#22C55E",
   NOW: "#FFFFFF",
 };
 
-export default function RelationshipTimeline({ events = [], onEventsChange }) {
+export default function RelationshipTimeline({ events = [], onEventsChange, onTogglePublic, showToast }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [modalMode, setModalMode] = useState("add"); // "add" or "edit" or "view"
@@ -144,6 +145,8 @@ export default function RelationshipTimeline({ events = [], onEventsChange }) {
                     onEdit={() => handleEditEvent(event)}
                     onView={() => handleViewEvent(event)}
                     formatDate={formatDate}
+                    onTogglePublic={onTogglePublic}
+                    showToast={showToast}
                   />
                 </motion.div>
               ))}
@@ -207,8 +210,10 @@ function AddEventNode({ onClick }) {
   );
 }
 
-function TimelineNode({ event, color, onEdit, onView, formatDate }) {
+function TimelineNode({ event, color, onEdit, onView, formatDate, onTogglePublic, showToast }) {
   const [hovered, setHovered] = useState(false);
+  const [isLongPressing, setIsLongPressing] = useState(false);
+  const longPressTimer = useRef(null);
   
   const handleClick = () => {
     if (onView) {
@@ -216,22 +221,68 @@ function TimelineNode({ event, color, onEdit, onView, formatDate }) {
     }
   };
 
+  const handleMouseDown = () => {
+    setIsLongPressing(false);
+    longPressTimer.current = setTimeout(() => {
+      setIsLongPressing(true);
+      handleLongPress();
+    }, 600);
+  };
+
+  const handleMouseUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    setIsLongPressing(false);
+  };
+
+  const handleLongPress = () => {
+    if (onTogglePublic) {
+      onTogglePublic(event);
+      
+      // نمایش toast
+      const message = event.isPublic ? 'Event hidden from public' : 'Event shared publicly';
+      showToast?.(message);
+    }
+  };
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+      }
+    };
+  }, []);
+
   return (
-    <div className="flex flex-row items-center w-full group cursor-pointer relative select-none">
+    <div 
+      className="flex flex-row items-center w-full group cursor-pointer relative select-none"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => {
+        handleMouseUp();
+        setHovered(false);
+      }}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onClick={handleClick}
+    >
       {/* The line and the nodes */}
       <div className="flex flex-col items-center justify-center w-20 relative">
         <motion.div
           className="relative z-10"
           initial={false}
-          animate={{ scale: hovered ? 1.12 : 1 }}
+          animate={{ 
+            scale: hovered ? 1.12 : isLongPressing ? 1.2 : 1
+          }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
-          onClick={handleClick}
         >
           {event.imageUrl ? (
             <span
-              className="block w-16 h-16 rounded-full border-4 shadow-lg border-white flex items-center justify-center overflow-hidden"
+              className={`block w-16 h-16 rounded-full border-4 shadow-lg border-white flex items-center justify-center overflow-hidden ${
+                isLongPressing ? 'ring-4 ring-ruby-accent/50' : ''
+              }`}
               style={{ background: color }}
             >
               <img
@@ -242,7 +293,9 @@ function TimelineNode({ event, color, onEdit, onView, formatDate }) {
             </span>
           ) : (
             <span
-              className="block w-16 h-16 rounded-full border-4 shadow-lg border-white flex items-center justify-center"
+              className={`block w-16 h-16 rounded-full border-4 shadow-lg border-white flex items-center justify-center ${
+                isLongPressing ? 'ring-4 ring-ruby-accent/50' : ''
+              }`}
               style={{ background: color }}
             >
               {/* Event type emoji */}
@@ -254,6 +307,7 @@ function TimelineNode({ event, color, onEdit, onView, formatDate }) {
                 {event.type === 'ANNIVERSARY' && '💐'}
                 {event.type === 'DATE' && '💖'}
                 {event.type === 'FIGHT_MAKEUP' && '🕊️'}
+                {event.type === 'TODO_COMPLETED' && '✅'}
               </span>
             </span>
           )}
@@ -265,15 +319,21 @@ function TimelineNode({ event, color, onEdit, onView, formatDate }) {
         <span className="text-base font-semibold truncate w-full text-white text-left">
           {event.title}
         </span>
-        <motion.span
-          className="text-sm text-white/70 mt-1 text-left w-full"
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: hovered ? 1 : 0, y: hovered ? 0 : -4 }}
-          transition={{ duration: 0.2 }}
-          style={{ pointerEvents: "none" }}
-        >
+        <span className="text-sm text-white/70 mt-1 text-left w-full">
           {formatDate(event.date)}
-        </motion.span>
+        </span>
+        
+        {/* Public indicator */}
+        {event.isPublic && (
+          <motion.span
+            className="text-xs text-ruby-accent mt-1"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+          >
+            Visible to public
+          </motion.span>
+        )}
       </div>
     </div>
   );
