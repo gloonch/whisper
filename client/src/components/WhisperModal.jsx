@@ -3,43 +3,30 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   WHISPER_TYPES, 
   WHISPER_CATEGORIES, 
-  TARGET_OPTIONS, 
   RECURRENCE_OPTIONS,
   getWhispersByCategory,
   createWhisperData 
 } from "./WhisperTypes";
 
 function WhisperModal({ isOpen, onClose, onSave, selectedDate }) {
-  const [selectedCategory, setSelectedCategory] = useState("self_care");
+  const [selectedCategory, setSelectedCategory] = useState("shared");
   const [selectedType, setSelectedType] = useState(null);
   const [customText, setCustomText] = useState("");
-  const [customEmoji, setCustomEmoji] = useState("✨");
-  const [target, setTarget] = useState("self");
   const [recurrence, setRecurrence] = useState("once");
   const [errors, setErrors] = useState({});
 
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
-      setSelectedCategory("self_care");
+      setSelectedCategory("shared");
       setSelectedType(null);
       setCustomText("");
-      setCustomEmoji("✨");
-      setTarget("self");
       setRecurrence("once");
       setErrors({});
     }
   }, [isOpen]);
 
-  // Auto-set target based on selected type
-  useEffect(() => {
-    if (selectedType) {
-      const typeData = WHISPER_TYPES[selectedType];
-      if (typeData && typeData.defaultFor !== "both") {
-        setTarget(typeData.defaultFor);
-      }
-    }
-  }, [selectedType]);
+
 
   const validateForm = () => {
     const newErrors = {};
@@ -64,8 +51,6 @@ function WhisperModal({ isOpen, onClose, onSave, selectedDate }) {
     const whisperData = createWhisperData({
       type: WHISPER_TYPES[selectedType].id,
       customText: selectedType === "CUSTOM" ? customText : "",
-      customEmoji: selectedType === "CUSTOM" ? customEmoji : "",
-      target,
       recurrence,
       date: selectedDate.toISOString().split('T')[0]
     });
@@ -204,45 +189,8 @@ function WhisperModal({ isOpen, onClose, onSave, selectedDate }) {
                   placeholder="e.g., Remember to smile today"
                 />
                 {errors.customText && <p className="text-red-500 text-xs mt-1">{errors.customText}</p>}
-                
-                <div className="mt-2">
-                  <label className="block text-sm font-medium text-bg-deep mb-1">
-                    Emoji
-                  </label>
-                  <input
-                    type="text"
-                    value={customEmoji}
-                    onChange={(e) => setCustomEmoji(e.target.value)}
-                    className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ruby-accent text-center"
-                    placeholder="✨"
-                    maxLength={2}
-                  />
-                </div>
               </div>
             )}
-
-            {/* Target Selection */}
-            <div>
-              <label className="block text-sm font-medium text-bg-deep mb-3">
-                For Whom
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {Object.entries(TARGET_OPTIONS).map(([key, option]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setTarget(option.id)}
-                    className={`p-3 rounded-xl border-2 text-xs font-medium transition-all ${
-                      target === option.id
-                        ? 'border-ruby-accent bg-ruby-accent/10 text-ruby-accent'
-                        : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
 
             {/* Recurrence Selection */}
             <div>

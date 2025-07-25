@@ -45,15 +45,13 @@ function Whispers() {
   const [whispers, setWhispers] = useState([
     // Sample whispers for testing
     createWhisperData({
-      type: "drink_water",
-      target: "self",
-      recurrence: "everyday",
+      type: "cook_together",
+      recurrence: "once",
       date: new Date().toISOString().split('T')[0]
     }),
     createWhisperData({
-      type: "hug_partner", 
-      target: "partner",
-      recurrence: "once",
+      type: "watch_sunset", 
+      recurrence: "everyday",
       date: new Date().toISOString().split('T')[0]
     })
   ]);

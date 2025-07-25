@@ -1,89 +1,47 @@
 // Predefined Whisper Types
 export const WHISPER_TYPES = {
-  // Self Care
-  DRINK_WATER: {
-    id: "drink_water",
-    label: "Drink Water",
-    emoji: "💧",
-    category: "self_care",
-    canBecomeEvent: false,
-    defaultFor: "self"
-  },
-  TAKE_BREAK: {
-    id: "take_break",
-    label: "Take a Break",
-    emoji: "☕",
-    category: "self_care", 
-    canBecomeEvent: false,
-    defaultFor: "self"
-  },
-  EXERCISE: {
-    id: "exercise",
-    label: "Do Some Exercise",
-    emoji: "🏃‍♂️",
-    category: "self_care",
-    canBecomeEvent: true,
-    defaultFor: "self"
-  },
-  
-  // Partner Care
-  HUG_PARTNER: {
-    id: "hug_partner",
-    label: "Hug Your Partner",
-    emoji: "🤗",
-    category: "partner_care",
-    canBecomeEvent: true,
-    defaultFor: "partner"
-  },
-  BE_KIND: {
-    id: "be_kind", 
-    label: "Be Extra Kind Today",
-    emoji: "💌",
-    category: "partner_care",
-    canBecomeEvent: true,
-    defaultFor: "partner"
-  },
-  SAY_I_LOVE_YOU: {
-    id: "say_i_love_you",
-    label: "Say 'I Love You'",
-    emoji: "💕",
-    category: "partner_care",
-    canBecomeEvent: false,
-    defaultFor: "partner"
-  },
-  LISTEN_ACTIVELY: {
-    id: "listen_actively",
-    label: "Listen Actively",
-    emoji: "👂",
-    category: "partner_care",
-    canBecomeEvent: true,
-    defaultFor: "partner"
-  },
-
   // Shared Activities
   COOK_TOGETHER: {
     id: "cook_together",
     label: "Cook Something Together",
     emoji: "👨‍🍳",
     category: "shared",
-    canBecomeEvent: true,
-    defaultFor: "both"
+    canBecomeEvent: true
   },
   WATCH_SUNSET: {
     id: "watch_sunset",
     label: "Watch the Sunset",
     emoji: "🌅",
     category: "shared",
-    canBecomeEvent: true,
-    defaultFor: "both"
+    canBecomeEvent: true
   },
   SHARE_STORY: {
     id: "share_story",
     label: "Share a Story",
     emoji: "📖",
     category: "shared", 
-    canBecomeEvent: true,
-    defaultFor: "both"
+    canBecomeEvent: true
+  },
+  PLAY_GAME: {
+    id: "play_game",
+    label: "Play a Game Together",
+    emoji: "🎲",
+    category: "shared",
+    canBecomeEvent: true
+  },
+  TAKE_WALK: {
+    id: "take_walk",
+    label: "Take a Walk Together",
+    emoji: "🚶‍♂️🚶‍♀️",
+    category: "shared",
+    canBecomeEvent: true
+  },
+  WATCH_MOVIE: {
+    id: "watch_movie",
+    label: "Watch a Movie",
+    emoji: "🎬",
+    category: "shared",
+    canBecomeEvent: true
   },
 
   // Custom
@@ -92,23 +50,12 @@ export const WHISPER_TYPES = {
     label: "Custom Whisper",
     emoji: "✨",
     category: "custom",
-    canBecomeEvent: true,
-    defaultFor: "self"
+    canBecomeEvent: true
   }
 };
 
 // Categories for grouping
 export const WHISPER_CATEGORIES = {
-  self_care: {
-    label: "Self Care",
-    color: "#7CE38B",
-    icon: "🌱"
-  },
-  partner_care: {
-    label: "Partner Care", 
-    color: "#FF66A8",
-    icon: "💕"
-  },
   shared: {
     label: "Together",
     color: "#4DA8FF",
@@ -135,24 +82,7 @@ export const RECURRENCE_OPTIONS = {
   }
 };
 
-// Target options
-export const TARGET_OPTIONS = {
-  SELF: {
-    id: "self",
-    label: "For Me",
-    description: "Reminder for yourself"
-  },
-  PARTNER: {
-    id: "partner",
-    label: "For Partner", 
-    description: "Reminder for your partner"
-  },
-  BOTH: {
-    id: "both",
-    label: "For Both",
-    description: "Reminder for both of you"
-  }
-};
+
 
 // Helper functions
 export const getWhispersByCategory = (category) => {
@@ -166,8 +96,6 @@ export const getWhisperById = (id) => {
 export const createWhisperData = ({
   type,
   customText = "",
-  customEmoji = "✨",
-  target = "self",
   recurrence = "once",
   date = new Date().toISOString().split('T')[0]
 }) => {
@@ -178,8 +106,7 @@ export const createWhisperData = ({
     date,
     text: type === "custom" ? customText : whisperType.label,
     type: whisperType.id,
-    emoji: type === "custom" ? customEmoji : whisperType.emoji,
-    for: target,
+    emoji: whisperType.emoji, // همیشه emoji از whisperType استفاده می‌شود
     recurrence,
     canBecomeEvent: whisperType.canBecomeEvent,
     isDone: false,

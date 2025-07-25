@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { TARGET_OPTIONS, RECURRENCE_OPTIONS, WHISPER_CATEGORIES } from "./WhisperTypes";
+import { RECURRENCE_OPTIONS, WHISPER_CATEGORIES } from "./WhisperTypes";
 
 function WhisperCard({ 
   whisper, 
@@ -11,9 +11,7 @@ function WhisperCard({
 }) {
   const [showActions, setShowActions] = useState(false);
 
-  const getTargetInfo = () => {
-    return Object.values(TARGET_OPTIONS).find(target => target.id === whisper.for) || TARGET_OPTIONS.SELF;
-  };
+
 
   const getRecurrenceInfo = () => {
     return Object.values(RECURRENCE_OPTIONS).find(rec => rec.id === whisper.recurrence) || RECURRENCE_OPTIONS.ONCE;
@@ -21,11 +19,7 @@ function WhisperCard({
 
   const getCategoryColor = () => {
     const type = whisper.type;
-    if (type.includes('water') || type.includes('break') || type.includes('exercise')) {
-      return WHISPER_CATEGORIES.self_care.color;
-    } else if (type.includes('partner') || type.includes('kind') || type.includes('love') || type.includes('listen')) {
-      return WHISPER_CATEGORIES.partner_care.color;
-    } else if (type.includes('together') || type.includes('cook') || type.includes('sunset') || type.includes('story')) {
+    if (type.includes('together') || type.includes('cook') || type.includes('sunset') || type.includes('story') || type.includes('game') || type.includes('walk') || type.includes('movie')) {
       return WHISPER_CATEGORIES.shared.color;
     } else {
       return WHISPER_CATEGORIES.custom.color;
@@ -89,9 +83,10 @@ function WhisperCard({
                 {getRecurrenceInfo().label}
               </span>
               <span className="text-white/60">•</span>
-              <span className="text-white/60">
-                {getTargetInfo().label}
+              <span className="text-white/60 text-xs">
+                Together 👫
               </span>
+
             </div>
           </div>
         </div>
