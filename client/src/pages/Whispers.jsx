@@ -126,12 +126,6 @@ function Whispers() {
 
   return (
     <div className="flex flex-col h-full bg-bg-deep">
-      {/* Profile Navbar */}
-      <ProfileNavbar 
-        name="Mahdi"
-        username="@gloonch"
-        onProfileClick={() => console.log('Profile clicked')}
-      />
 
       {/* Date Selector */}
       <DateSelector 

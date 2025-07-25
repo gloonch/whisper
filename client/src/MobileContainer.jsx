@@ -1,7 +1,7 @@
 function MobileContainer({ children }) {
   return (
     <div
-      className="w-[550px] h-screen bg-deep shadow-2xl mx-auto flex flex-col overflow-hidden "
+      className="relative w-[550px] h-screen bg-deep shadow-2xl mx-auto flex flex-col overflow-hidden "
       style={{
         minWidth: "400px",
         maxWidth: "600px",
