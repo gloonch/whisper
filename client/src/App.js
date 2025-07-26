@@ -4,6 +4,7 @@ import Navbar from "./components/Navbar";
 import Us from "./pages/Us";
 import Whispers from "./pages/Whispers";
 import Me from "./pages/Me";
+import NotFound from "./pages/NotFound";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
                 <Route path="/" element={<Us />} />
                 <Route path="/whispers" element={<Whispers />} />
                 <Route path="/me" element={<Me />} />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </div>
             <Navbar />
