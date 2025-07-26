@@ -1,0 +1,147 @@
+# Networks
+networks:
+  whisper-network:
+    driver: bridge
+
+# Volumes for data persistence
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0-jammy
+    container_name: whisper-mongodb
+    restart: unless-stopped
+    
+    # Security & Authentication
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: whisper_admin
+      MONGO_INITDB_ROOT_PASSWORD: whisper_secure_password_2024
+      MONGO_INITDB_DATABASE: whisper_db
+    
+    # Port mapping
+    ports:
+      - "27017:27017"
+    
+    # Volume mounting for data persistence
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Network
+    networks:
+      - whisper-network
+    
+    # Labels for monitoring
+    labels:
+      - "traefik.enable=false"
+      - "service.name=whisper-mongodb"
+
+  # Whisper API Server
+  whisper-api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      target: production
+    container_name: whisper-api
+    restart: unless-stopped
+    
+    # Dependency management
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    
+    # Environment variables
+    environment:
+      # App Configuration
+      APP_NAME: "Whisper Server"
+      APP_VERSION: "1.0.0"
+      ENVIRONMENT: "production"
+      PORT: "8080"
+      BASE_URL: "http://localhost:8080"
+      
+      # Database Configuration
+      MONGODB_URI: "mongodb://whisper_admin:whisper_secure_password_2024@mongodb:27017/whisper_db?authSource=admin"
+      MONGODB_NAME: "whisper_db"
+      MONGODB_CONNECT_TIMEOUT: "30"
+      MONGODB_MAX_POOL_SIZE: "100"
+      MONGODB_MIN_POOL_SIZE: "10"
+      
+      # JWT Configuration (در production باید از secrets استفاده کنید)
+      JWT_SECRET: "whisper-super-secret-jwt-key-2024-production"
+      JWT_ACCESS_TTL: "24"
+      JWT_REFRESH_TTL: "720"
+      
+      # Server Configuration  
+      GIN_MODE: "release"
+      TZ: "Asia/Tehran"
+    
+    # Port mapping
+    ports:
+      - "8080:8080"
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "/main", "health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    
+    # Network
+    networks:
+      - whisper-network
+    
+    # Labels
+    labels:
+      - "service.name=whisper-api"
+      - "service.version=1.0.0"
+
+  # MongoDB Admin Interface (development)
+  mongo-express:
+    image: mongo-express:1.0.0-alpha
+    container_name: whisper-mongo-express
+    restart: unless-stopped
+    
+    # Dependency
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    
+    # Environment
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: whisper_admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: whisper_secure_password_2024
+      ME_CONFIG_MONGODB_URL: mongodb://whisper_admin:whisper_secure_password_2024@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin123
+    
+    # Port
+    ports:
+      - "8081:8081"
+    
+    # Network
+    networks:
+      - whisper-network
+    
+    # Profile (development only)
+    profiles:
+      - "dev"
+      - "development"
+    
+    # Labels
+    labels:
+      - "service.name=whisper-mongo-express" 

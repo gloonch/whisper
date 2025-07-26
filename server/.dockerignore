@@ -1,0 +1,62 @@
+# 📁 Build artifacts
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# 🧪 Test files
+*.test
+*_test.go
+testdata/
+
+# 📊 Coverage reports
+*.out
+coverage.html
+
+# 🛠️ Development files
+.env
+.env.local
+.env.*.local
+*.log
+logs/
+
+# 📝 Documentation (اختیاری - اگر نمی‌خواهید docs را include کنید)
+docs/
+README.md
+*.md
+
+# 🔄 Version control
+.git/
+.gitignore
+.gitattributes
+
+# 🐳 Docker files
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# 📦 Dependencies (چون از go mod استفاده می‌کنیم)
+vendor/
+
+# 🔧 IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 📱 OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 🧹 Temporary files
+tmp/
+temp/
+*.tmp 
