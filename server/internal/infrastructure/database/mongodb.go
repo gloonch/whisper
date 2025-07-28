@@ -7,6 +7,7 @@ import (
 
 	"whisper-server/internal/infrastructure/config"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -113,15 +114,15 @@ func (m *MongoDB) createIndexes(ctx context.Context) error {
 	// Users indexes
 	usersIndexes := []mongo.IndexModel{
 		{
-			Keys:    map[string]interface{}{"username": 1},
+			Keys:    bson.D{{"username", 1}},
 			Options: options.Index().SetUnique(true),
 		},
 		{
-			Keys:    map[string]interface{}{"email": 1},
+			Keys:    bson.D{{"email", 1}},
 			Options: options.Index().SetUnique(true).SetSparse(true),
 		},
 		{
-			Keys: map[string]interface{}{"relationshipId": 1},
+			Keys: bson.D{{"relationshipId", 1}},
 		},
 	}
 	if _, err := m.Users().Indexes().CreateMany(ctx, usersIndexes); err != nil {
@@ -131,14 +132,14 @@ func (m *MongoDB) createIndexes(ctx context.Context) error {
 	// Relationships indexes
 	relationshipsIndexes := []mongo.IndexModel{
 		{
-			Keys: map[string]interface{}{"partners.userId": 1},
+			Keys: bson.D{{"partners.userId", 1}},
 		},
 		{
-			Keys:    map[string]interface{}{"inviteCode": 1},
+			Keys:    bson.D{{"inviteCode", 1}},
 			Options: options.Index().SetUnique(true),
 		},
 		{
-			Keys: map[string]interface{}{"status": 1},
+			Keys: bson.D{{"status", 1}},
 		},
 	}
 	if _, err := m.Relationships().Indexes().CreateMany(ctx, relationshipsIndexes); err != nil {
@@ -148,19 +149,16 @@ func (m *MongoDB) createIndexes(ctx context.Context) error {
 	// Events indexes
 	eventsIndexes := []mongo.IndexModel{
 		{
-			Keys: map[string]interface{}{"relationshipId": 1, "date": -1},
+			Keys: bson.D{{"relationshipId", 1}, {"date", -1}},
 		},
 		{
-			Keys: map[string]interface{}{"visibility.isPublic": 1, "viewCount": -1},
+			Keys: bson.D{{"visibility.isPublic", 1}, {"viewCount", -1}},
 		},
 		{
-			Keys: map[string]interface{}{"createdBy": 1, "createdAt": -1},
+			Keys: bson.D{{"createdBy", 1}, {"createdAt", -1}},
 		},
 		{
-			Keys: map[string]interface{}{"type": 1},
-		},
-		{
-			Keys: map[string]interface{}{"date": 1},
+			Keys: bson.D{{"type", 1}},
 		},
 	}
 	if _, err := m.Events().Indexes().CreateMany(ctx, eventsIndexes); err != nil {
@@ -170,37 +168,54 @@ func (m *MongoDB) createIndexes(ctx context.Context) error {
 	// Whispers indexes
 	whispersIndexes := []mongo.IndexModel{
 		{
-			Keys: map[string]interface{}{"relationshipId": 1, "date": -1},
+			Keys: bson.D{{"relationshipId", 1}, {"date", 1}},
 		},
 		{
-			Keys: map[string]interface{}{"createdBy": 1, "isDone": 1},
+			Keys: bson.D{{"isDone", 1}, {"date", 1}},
 		},
 		{
-			Keys: map[string]interface{}{"recurrence": 1, "nextOccurrence": 1},
-		},
-		{
-			Keys: map[string]interface{}{"type": 1},
+			Keys: bson.D{{"type", 1}},
 		},
 	}
 	if _, err := m.Whispers().Indexes().CreateMany(ctx, whispersIndexes); err != nil {
 		return fmt.Errorf("failed to create whispers indexes: %w", err)
 	}
 
-	// InviteCodes indexes
+	// Todos indexes
+	todosIndexes := []mongo.IndexModel{
+		{
+			Keys: bson.D{{"relationshipId", 1}, {"isCompleted", 1}},
+		},
+		{
+			Keys: bson.D{{"priority", 1}, {"createdAt", -1}},
+		},
+		{
+			Keys: bson.D{{"dueDate", 1}},
+		},
+	}
+	if _, err := m.Todos().Indexes().CreateMany(ctx, todosIndexes); err != nil {
+		return fmt.Errorf("failed to create todos indexes: %w", err)
+	}
+
+	// Invite codes indexes
 	inviteCodesIndexes := []mongo.IndexModel{
 		{
-			Keys:    map[string]interface{}{"code": 1},
+			Keys:    bson.D{{"code", 1}},
 			Options: options.Index().SetUnique(true),
 		},
 		{
-			Keys: map[string]interface{}{"createdBy": 1, "status": 1},
+			Keys: bson.D{{"createdBy", 1}},
 		},
 		{
-			Keys: map[string]interface{}{"status": 1, "expiresAt": 1},
+			Keys:    bson.D{{"expiresAt", 1}},
+			Options: options.Index().SetExpireAfterSeconds(0),
+		},
+		{
+			Keys: bson.D{{"isUsed", 1}},
 		},
 	}
 	if _, err := m.InviteCodes().Indexes().CreateMany(ctx, inviteCodesIndexes); err != nil {
-		return fmt.Errorf("failed to create invite_codes indexes: %w", err)
+		return fmt.Errorf("failed to create invite codes indexes: %w", err)
 	}
 
 	return nil

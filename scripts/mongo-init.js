@@ -179,36 +179,50 @@ db.createCollection('invitecodes', {
 
 // 📊 Create indexes for performance optimization
 
+// Helper function to safely create indexes
+function createIndexSafely(collection, indexSpec, options = {}) {
+  try {
+    collection.createIndex(indexSpec, options);
+    print(`✅ Index created: ${JSON.stringify(indexSpec)}`);
+  } catch (error) {
+    if (error.code === 85) { // IndexKeySpecsConflict
+      print(`⚠️ Index already exists: ${JSON.stringify(indexSpec)}`);
+    } else {
+      print(`❌ Error creating index ${JSON.stringify(indexSpec)}: ${error.message}`);
+    }
+  }
+}
+
 // Users indexes
-db.users.createIndex({ "username": 1 }, { unique: true });
-db.users.createIndex({ "email": 1 }, { unique: true });
-db.users.createIndex({ "relationshipId": 1 });
+createIndexSafely(db.users, { "username": 1 }, { unique: true });
+createIndexSafely(db.users, { "email": 1 }, { unique: true, sparse: true });
+createIndexSafely(db.users, { "relationshipId": 1 });
 
 // Relationships indexes
-db.relationships.createIndex({ "users": 1 });
-db.relationships.createIndex({ "createdAt": 1 });
+createIndexSafely(db.relationships, { "users": 1 });
+createIndexSafely(db.relationships, { "createdAt": 1 });
 
 // Events indexes
-db.events.createIndex({ "relationshipId": 1, "date": -1 });
-db.events.createIndex({ "isPublic": 1, "date": -1 });
-db.events.createIndex({ "type": 1 });
-db.events.createIndex({ "createdAt": -1 });
+createIndexSafely(db.events, { "relationshipId": 1, "date": -1 });
+createIndexSafely(db.events, { "isPublic": 1, "date": -1 });
+createIndexSafely(db.events, { "type": 1 });
+createIndexSafely(db.events, { "createdAt": -1 });
 
 // Whispers indexes
-db.whispers.createIndex({ "relationshipId": 1, "date": 1 });
-db.whispers.createIndex({ "isDone": 1, "date": 1 });
-db.whispers.createIndex({ "type": 1 });
+createIndexSafely(db.whispers, { "relationshipId": 1, "date": 1 });
+createIndexSafely(db.whispers, { "isDone": 1, "date": 1 });
+createIndexSafely(db.whispers, { "type": 1 });
 
 // Todos indexes
-db.todos.createIndex({ "relationshipId": 1, "isCompleted": 1 });
-db.todos.createIndex({ "priority": 1, "createdAt": -1 });
-db.todos.createIndex({ "dueDate": 1 });
+createIndexSafely(db.todos, { "relationshipId": 1, "isCompleted": 1 });
+createIndexSafely(db.todos, { "priority": 1, "createdAt": -1 });
+createIndexSafely(db.todos, { "dueDate": 1 });
 
 // Invite codes indexes
-db.invitecodes.createIndex({ "code": 1 }, { unique: true });
-db.invitecodes.createIndex({ "createdBy": 1 });
-db.invitecodes.createIndex({ "expiresAt": 1 }, { expireAfterSeconds: 0 });
-db.invitecodes.createIndex({ "isUsed": 1 });
+createIndexSafely(db.invitecodes, { "code": 1 }, { unique: true });
+createIndexSafely(db.invitecodes, { "createdBy": 1 });
+createIndexSafely(db.invitecodes, { "expiresAt": 1 }, { expireAfterSeconds: 0 });
+createIndexSafely(db.invitecodes, { "isUsed": 1 });
 
 // 🎯 Insert sample data for testing (optional)
 print('🗄️ MongoDB initialization completed successfully!');
