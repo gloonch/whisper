@@ -7,10 +7,11 @@ import (
 )
 
 type User struct {
-	ID       primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Name     string             `bson:"name" json:"name" validate:"required,min=2,max=50"`
-	Username string             `bson:"username" json:"username" validate:"required,min=3,max=20,alphanum"`
-	Email    string             `bson:"email,omitempty" json:"email" validate:"omitempty,email"`
+	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Name         string             `bson:"name" json:"name" validate:"required,min=2,max=50"`
+	Username     string             `bson:"username" json:"username" validate:"required,min=3,max=20,alphanum"`
+	Email        string             `bson:"email,omitempty" json:"email" validate:"omitempty,email"`
+	PasswordHash string             `bson:"passwordHash" json:"-" validate:"required"`
 
 	// Avatar information
 	Avatar *Avatar `bson:"avatar,omitempty" json:"avatar"`
@@ -60,12 +61,14 @@ type UserStats struct {
 }
 
 // Domain methods
-func NewUser(name, username string) *User {
+func NewUser(username, name, email, passwordHash string) *User {
 	now := time.Now()
 	return &User{
-		ID:       primitive.NewObjectID(),
-		Name:     name,
-		Username: username,
+		ID:           primitive.NewObjectID(),
+		Name:         name,
+		Username:     username,
+		Email:        email,
+		PasswordHash: passwordHash,
 		Settings: UserSettings{
 			AutoPublic: false,
 			Language:   "en",

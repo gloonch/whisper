@@ -1,13 +1,30 @@
 package routes
 
 import (
+	"whisper-server/internal/application/usecases"
 	"whisper-server/internal/infrastructure/config"
 	"whisper-server/internal/infrastructure/database"
+	"whisper-server/internal/infrastructure/repositories"
+	"whisper-server/internal/infrastructure/services"
+	"whisper-server/internal/interfaces/http/handlers"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRoutes(router *gin.Engine, db *database.MongoDB, cfg *config.Config) {
+	// Initialize services
+	jwtService := services.NewJWTService(cfg)
+	passwordService := services.NewPasswordService()
+
+	// Initialize repositories
+	userRepo := repositories.NewUserRepository(db)
+
+	// Initialize use cases
+	authUseCase := usecases.NewAuthUseCase(userRepo, jwtService, passwordService)
+
+	// Initialize handlers
+	authHandler := handlers.NewAuthHandler(authUseCase)
+
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -23,18 +40,12 @@ func SetupRoutes(router *gin.Engine, db *database.MongoDB, cfg *config.Config) {
 		// Auth routes
 		authRoutes := v1.Group("/auth")
 		{
-			authRoutes.POST("/register", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
-			authRoutes.POST("/login", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
-			authRoutes.POST("/refresh", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
+			authRoutes.POST("/register", authHandler.Register)
+			authRoutes.POST("/login", authHandler.Login)
+			authRoutes.POST("/refresh", authHandler.RefreshToken)
 		}
 
-		// User routes
+		// User routes -  placeholder
 		userRoutes := v1.Group("/users")
 		{
 			userRoutes.GET("/profile", func(c *gin.Context) {

@@ -28,9 +28,9 @@ type DatabaseConfig struct {
 }
 
 type JWTConfig struct {
-	SecretKey       string
-	AccessTokenTTL  int // hours
-	RefreshTokenTTL int // hours
+	Secret           string // تغییر شده
+	AccessExpiresIn  string // تغییر شده
+	RefreshExpiresIn string // تغییر شده
 }
 
 func Load() *Config {
@@ -50,9 +50,9 @@ func Load() *Config {
 			MinPoolSize:    uint64(getEnvAsInt("MONGODB_MIN_POOL_SIZE", 10)),
 		},
 		JWT: JWTConfig{
-			SecretKey:       getEnv("JWT_SECRET", "your-super-secret-jwt-key-change-in-production"),
-			AccessTokenTTL:  getEnvAsInt("JWT_ACCESS_TTL", 24),   // 24 hours
-			RefreshTokenTTL: getEnvAsInt("JWT_REFRESH_TTL", 720), // 30 days
+			Secret:           getEnv("JWT_SECRET", "your-super-secret-jwt-key-change-in-production"),
+			AccessExpiresIn:  getEnv("JWT_ACCESS_EXPIRES_IN", "24h"),   // تغییر شده
+			RefreshExpiresIn: getEnv("JWT_REFRESH_EXPIRES_IN", "720h"), // تغییر شده
 		},
 	}
 }
