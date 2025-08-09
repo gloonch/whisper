@@ -10,18 +10,19 @@ const instance = axios.create({
 // Add request interceptor to include auth token
 instance.interceptors.request.use(
   (config) => {
-    const user = localStorage.getItem('whisper_user');
-    if (user) {
-      const parsedUser = JSON.parse(user);
-      if (parsedUser.token) {
-        config.headers.Authorization = `Bearer ${parsedUser.token}`;
+    try {
+      const raw = localStorage.getItem('whisper_user');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const token = parsed?.accessToken || parsed?.token; // prefer accessToken (server response)
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
       }
-    }
+    } catch (_) {}
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Add response interceptor to handle auth errors

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import RelationshipTimeline from "../components/RelationshipTimeline";
 import ExploreBar from "../components/ExploreBar";
 import ExploreGrid from "../components/ExploreGrid";
@@ -7,47 +7,10 @@ import TodoListView from "../components/TodoListView";
 import Toast from "../components/Toast";
 import { usePublicEvents } from "../hooks/usePublicEvents";
 import { useTodoList } from "../hooks/useTodoList";
-
-const initialEvents = [
-  {
-    id: "1",
-    date: "2021-01-01",
-    type: "MEETING",
-    title: "First Meeting",
-    imageUrl: "",
-  },
-  {
-    id: "2",
-    date: "2021-03-14",
-    type: "TRIP",
-    title: "Spring Trip",
-    imageUrl: "",
-  },
-  {
-    id: "3",
-    date: "2021-06-21",
-    type: "BIRTHDAY",
-    title: "Birthday Surprise",
-    imageUrl: "",
-  },
-  {
-    id: "4",
-    date: "2022-02-14",
-    type: "ANNIVERSARY",
-    title: "1st Anniversary",
-    imageUrl: "",
-  },
-  {
-    id: "5",
-    date: "2022-07-10",
-    type: "FIGHT_MAKEUP",
-    title: "Big Fight & Makeup",
-    imageUrl: "",
-  },
-];
+import { eventsApi, relationshipsApi } from "../lib/api";
 
 function Us() {
-  const [events, setEvents] = useState(initialEvents);
+  const [events, setEvents] = useState([]);
   
   // Explore & Todo hooks
   const { publicEvents, addToPublicEvents, removeFromPublicEvents } = usePublicEvents();
@@ -63,14 +26,74 @@ function Us() {
 
   const handleEventsChange = (newEvents) => {
     setEvents(newEvents);
-    // در آینده: ذخیره در Firebase
     console.log("Events updated:", newEvents);
   };
 
-  // Toast functionality
+  // Load events from backend on mount (if relationship exists)
+  useEffect(() => {
+    const load = async () => {
+      try {
+        await relationshipsApi.getCurrent(); // ensure relationship exists
+        const list = await eventsApi.listMine({ limit: 100, offset: 0 });
+        const mapped = list.map(ev => ({
+          id: ev.id,
+          date: ev.date?.split('T')[0],
+          type: ev.type,
+          title: ev.title,
+          imageUrl: ev.image?.url || "",
+        }));
+        setEvents(mapped);
+      } catch (e) {
+        setEvents([]); // no relationship or error -> empty
+        console.log('Events load skipped:', e?.response?.data?.message || e.message);
+      }
+    };
+    load();
+  }, []);
+
   const showToastMessage = (message) => {
     setToastMessage(message);
     setShowToast(true);
+  };
+
+  // Create event handler used by RelationshipTimeline modal
+  const handleCreateEventFromTimeline = async (eventData) => {
+    const payload = {
+      title: eventData.title,
+      description: eventData.description,
+      date: eventData.date ? new Date(eventData.date).toISOString() : new Date().toISOString(),
+      type: eventData.type || 'DATE',
+    };
+    const created = await eventsApi.create(payload);
+    const mapped = {
+      id: created.id,
+      date: created.date?.split('T')[0],
+      type: created.type,
+      title: created.title,
+      imageUrl: created.image?.url || "",
+    };
+    setEvents(prev => [...prev, mapped]);
+    showToastMessage('Event created successfully');
+  };
+
+  // Update event handler used by RelationshipTimeline modal in edit mode
+  const handleUpdateEventFromTimeline = async (eventData) => {
+    const payload = {
+      title: eventData.title,
+      description: eventData.description,
+      date: eventData.date ? new Date(eventData.date).toISOString() : undefined,
+      type: eventData.type,
+    };
+    const updated = await eventsApi.updateById(eventData.id, payload);
+    const mapped = {
+      id: updated.id,
+      date: updated.date?.split('T')[0],
+      type: updated.type,
+      title: updated.title,
+      imageUrl: updated.image?.url || "",
+    };
+    setEvents(prev => prev.map(e => e.id === mapped.id ? mapped : e));
+    showToastMessage('Event updated successfully');
   };
 
   // Explore functionality
@@ -107,10 +130,6 @@ function Us() {
   };
 
   const handleTodoComplete = (todo, imageUrl) => {
-    // حذف از todo list
-    completeTodo(todo.id);
-    
-    // اضافه کردن به timeline
     const newEvent = {
       id: `todo_${Date.now()}`,
       date: new Date().toISOString().split('T')[0],
@@ -119,10 +138,8 @@ function Us() {
       imageUrl: imageUrl,
       isPublic: false
     };
-    
     const updatedEvents = [...events, newEvent];
     handleEventsChange(updatedEvents);
-    
     showToastMessage(`"${todo.title}" completed and added to timeline!`);
   };
 
@@ -131,43 +148,36 @@ function Us() {
     const updatedEvents = events.map(e => {
       if (e.id === event.id) {
         const updatedEvent = { ...e, isPublic: !e.isPublic };
-        
-        // اضافه یا حذف از publicEvents
         if (updatedEvent.isPublic) {
           addToPublicEvents(updatedEvent);
         } else {
           removeFromPublicEvents(`pe_${event.id}`);
         }
-        
         return updatedEvent;
       }
       return e;
     });
-    
     handleEventsChange(updatedEvents);
   };
 
   return (
     <div className="flex flex-col h-full bg-bg-deep">
-      {/* <div className="px-4 py-6 border-b border-white/10">
-        <h1 className="text-2xl font-semibold text-white mb-2">Our Story</h1>
-        <p className="text-white/70 text-sm">Timeline of our beautiful journey together</p>
-      </div> */}
-      
       {/* Explore Bar */}
-      <ExploreBar
+      {/* <ExploreBar
         publicEvents={publicEvents}
         todoCount={todoList.length}
         onShowExploreGrid={handleShowExploreGrid}
         onShowTodoList={handleShowTodoList}
-      />
-      
+      /> */}
+
       <div className="flex-1 overflow-y-auto">
         <RelationshipTimeline 
           events={events} 
           onEventsChange={handleEventsChange}
           onTogglePublic={handleTogglePublic}
           showToast={showToastMessage}
+          onCreateEvent={handleCreateEventFromTimeline}
+          onUpdateEvent={handleUpdateEventFromTimeline}
         />
       </div>
 

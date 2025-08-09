@@ -14,7 +14,7 @@ const EVENT_COLORS = {
   NOW: "#FFFFFF",
 };
 
-export default function RelationshipTimeline({ events = [], onEventsChange, onTogglePublic, showToast }) {
+export default function RelationshipTimeline({ events = [], onEventsChange, onTogglePublic, showToast, onCreateEvent, onUpdateEvent }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [modalMode, setModalMode] = useState("add"); // "add" or "edit" or "view"
@@ -44,13 +44,31 @@ export default function RelationshipTimeline({ events = [], onEventsChange, onTo
     setModalMode(newMode);
   };
 
-  const handleSaveEvent = (eventData) => {
+  const handleSaveEvent = async (eventData) => {
     if (modalMode === "add") {
-      const newEvents = [...events, eventData];
-      onEventsChange?.(newEvents);
+      if (onCreateEvent) {
+        try {
+          await onCreateEvent(eventData);
+        } finally {
+          setModalOpen(false);
+        }
+      } else {
+        const newEvents = [...events, eventData];
+        onEventsChange?.(newEvents);
+        setModalOpen(false);
+      }
     } else if (modalMode === "edit") {
-      const newEvents = events.map(e => e.id === eventData.id ? eventData : e);
-      onEventsChange?.(newEvents);
+      if (onUpdateEvent) {
+        try {
+          await onUpdateEvent(eventData);
+        } finally {
+          setModalOpen(false);
+        }
+      } else {
+        const newEvents = events.map(e => e.id === eventData.id ? eventData : e);
+        onEventsChange?.(newEvents);
+        setModalOpen(false);
+      }
     }
   };
 
@@ -240,14 +258,11 @@ function TimelineNode({ event, color, onEdit, onView, formatDate, onTogglePublic
   const handleLongPress = () => {
     if (onTogglePublic) {
       onTogglePublic(event);
-      
-      // نمایش toast
       const message = event.isPublic ? 'Event hidden from public' : 'Event shared publicly';
       showToast?.(message);
     }
   };
 
-  // Clean up timer on unmount
   useEffect(() => {
     return () => {
       if (longPressTimer.current) {
