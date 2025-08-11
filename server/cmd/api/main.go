@@ -40,6 +40,9 @@ func main() {
 
 	// Initialize Gin router
 	router := gin.New()
+	// Avoid automatic 301/307 redirects that break CORS preflight (trailing slash, fixed path)
+	router.RedirectTrailingSlash = false
+	router.RedirectFixedPath = false
 
 	// Setup middleware
 	router.Use(gin.Logger())

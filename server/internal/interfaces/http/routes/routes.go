@@ -7,23 +7,33 @@ import (
 	"whisper-server/internal/infrastructure/repositories"
 	"whisper-server/internal/infrastructure/services"
 	"whisper-server/internal/interfaces/http/handlers"
+	"whisper-server/internal/interfaces/http/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRoutes(router *gin.Engine, db *database.MongoDB, cfg *config.Config) {
+	// CORS for browser clients without external dependency
+	router.Use(middleware.CORSMiddleware())
 	// Initialize services
 	jwtService := services.NewJWTService(cfg)
 	passwordService := services.NewPasswordService()
 
 	// Initialize repositories
 	userRepo := repositories.NewUserRepository(db)
+	relationshipRepo := repositories.NewRelationshipRepository(db)
+	inviteRepo := repositories.NewInviteRepository(db)
 
 	// Initialize use cases
 	authUseCase := usecases.NewAuthUseCase(userRepo, jwtService, passwordService)
+	relationshipUseCase := usecases.NewRelationshipUseCase(relationshipRepo, userRepo, inviteRepo)
+	eventRepo := repositories.NewEventRepository(db)
+	eventUseCase := usecases.NewEventUseCase(eventRepo, relationshipRepo)
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(authUseCase)
+	relationshipHandler := handlers.NewRelationshipHandler(relationshipUseCase)
+	eventHandler := handlers.NewEventHandler(eventUseCase)
 
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
@@ -45,6 +55,23 @@ func SetupRoutes(router *gin.Engine, db *database.MongoDB, cfg *config.Config) {
 			authRoutes.POST("/refresh", authHandler.RefreshToken)
 		}
 
+		// Protected group
+		protected := v1.Group("")
+		protected.Use(middleware.AuthMiddleware(jwtService))
+		{
+			// Events routes
+			eventRoutes := protected.Group("/events")
+			{
+				// Support both with and without trailing slash to avoid 301/307 redirects (CORS issues)
+				eventRoutes.POST("/", eventHandler.RegisterEvent)
+				eventRoutes.POST("", eventHandler.RegisterEvent)
+				eventRoutes.GET("/:id", eventHandler.GetEventByID)
+				eventRoutes.PUT("/:id", eventHandler.UpdateEventByID)
+				eventRoutes.GET("/", eventHandler.GetAllEventsByUserID)
+				eventRoutes.GET("", eventHandler.GetAllEventsByUserID)
+			}
+		}
+
 		// User routes -  placeholder
 		userRoutes := v1.Group("/users")
 		{
@@ -59,44 +86,14 @@ func SetupRoutes(router *gin.Engine, db *database.MongoDB, cfg *config.Config) {
 			})
 		}
 
-		// Relationship routes
+		// Relationship routes (protected)
 		relationshipRoutes := v1.Group("/relationships")
+		relationshipRoutes.Use(middleware.AuthMiddleware(jwtService))
 		{
-			relationshipRoutes.POST("/invite", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
-			relationshipRoutes.POST("/join", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
-			relationshipRoutes.GET("/current", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
-			relationshipRoutes.DELETE("/disconnect", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
-		}
-
-		// Events routes
-		eventRoutes := v1.Group("/events")
-		{
-			eventRoutes.GET("/", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
-			eventRoutes.POST("/", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
-			eventRoutes.GET("/:id", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
-			eventRoutes.PUT("/:id", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
-			eventRoutes.DELETE("/:id", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
-			eventRoutes.PUT("/:id/visibility", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
+			relationshipRoutes.POST("/invite", relationshipHandler.GenerateInvite)
+			relationshipRoutes.POST("/join", relationshipHandler.Join)
+			relationshipRoutes.GET("/current", relationshipHandler.Current)
+			relationshipRoutes.DELETE("/disconnect", relationshipHandler.Disconnect)
 		}
 
 		// Whispers routes

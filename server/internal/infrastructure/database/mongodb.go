@@ -98,7 +98,8 @@ func (m *MongoDB) PublicEvents() *mongo.Collection {
 }
 
 func (m *MongoDB) InviteCodes() *mongo.Collection {
-	return m.database.Collection("invite_codes")
+    // Match initialization script which creates 'invitecodes'
+    return m.database.Collection("invitecodes")
 }
 
 func (m *MongoDB) EventTypes() *mongo.Collection {
