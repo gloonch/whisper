@@ -1,47 +1,35 @@
-# 🏗️ Build stage - استفاده از Alpine برای سبکی
-FROM golang:1.23-alpine AS builder
-
-# Install build dependencies
-RUN apk add --no-cache git ca-certificates tzdata
-
-# Set working directory  
+# =========================================
+# Dev target (hot reload via Air)
+# =========================================
+FROM golang:1.23 AS dev
 WORKDIR /app
 
-# Copy go mod files first for better layer caching
+# Cache modules
 COPY go.mod go.sum ./
-
-# Download dependencies (این layer cache می‌شود)
 RUN go mod download
 
-# Copy source code
+# Copy source once (we will mount in compose)
 COPY . .
 
-# Build the application with optimizations
-# CGO_ENABLED=0 برای static binary
-# -ldflags="-w -s" برای کاهش سایز binary
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-    -ldflags="-w -s -X main.version=$(date +%Y%m%d-%H%M%S)" \
-    -a -installsuffix cgo \
-    -o main ./cmd/api
+# Install Air for hot-reload
+RUN go install github.com/air-verse/air@latest
 
-# 🚀 Production stage - استفاده از scratch برای کمترین سایز
-FROM scratch AS production
-
-# Copy timezone data
-COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
-
-# Copy SSL certificates for HTTPS requests
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-
-# Copy binary from builder
-COPY --from=builder /app/main /main
-
-# Expose port
+# Expose API port (adjust if different)
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD ["/main", "health"] || exit 1
+# Run server with Air
+CMD ["air", "-c", ".air.toml"]
 
-# Run the application
-ENTRYPOINT ["/main"] 
+# =========================================
+# Prod target (build binary)
+# =========================================
+FROM golang:1.23 AS build
+WORKDIR /app
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/bin/server ./cmd/api/main.go
+
+FROM gcr.io/distroless/base-debian12 AS prod
+WORKDIR /app
+COPY --from=build /app/bin/server /server
+EXPOSE 8080
+CMD ["/server"]
