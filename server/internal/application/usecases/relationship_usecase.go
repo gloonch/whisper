@@ -80,17 +80,28 @@ func (uc *relationshipUseCase) JoinWithInviteCode(ctx context.Context, userID pr
 		log.Printf("[REL][JOIN][ERROR] find code=%s err=%v", code, err)
 		return nil, err
 	}
-    rel := &entities.Relationship{
-        Partners: []entities.RelationshipPartner{
-            {UserID: inv.CreatedBy, JoinedAt: time.Now()},
-            {UserID: userID, JoinedAt: time.Now()},
-        },
-        Status:     entities.RelationshipStatusActive,
-        InviteCode: inv.Code,
-        CreatedAt:  time.Now(),
-        UpdatedAt:  time.Now(),
-    }
-    if err := uc.relRepo.CreateWithDetails(ctx, rel, []primitive.ObjectID{inv.CreatedBy, userID}, inv.FirstMeetingDate); err != nil {
+	// Prevent joining with own invite code
+	if inv.CreatedBy == userID {
+		return nil, fmtError("cannot join your own invite code")
+	}
+	// Prevent users already in an active relationship from joining another
+	if _, err := uc.relRepo.FindCurrentByUserID(ctx, userID); err == nil {
+		return nil, fmtError("user already in an active relationship")
+	}
+	if _, err := uc.relRepo.FindCurrentByUserID(ctx, inv.CreatedBy); err == nil {
+		return nil, fmtError("inviter already in an active relationship")
+	}
+	rel := &entities.Relationship{
+		Partners: []entities.RelationshipPartner{
+			{UserID: inv.CreatedBy, JoinedAt: time.Now()},
+			{UserID: userID, JoinedAt: time.Now()},
+		},
+		Status:     entities.RelationshipStatusActive,
+		InviteCode: inv.Code,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	}
+	if err := uc.relRepo.CreateWithDetails(ctx, rel, []primitive.ObjectID{inv.CreatedBy, userID}, inv.FirstMeetingDate); err != nil {
 		log.Printf("[REL][JOIN][ERROR] create rel err=%v", err)
 		return nil, err
 	}

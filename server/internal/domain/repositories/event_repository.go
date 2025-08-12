@@ -13,4 +13,5 @@ type EventRepository interface {
 	FindByID(ctx context.Context, id primitive.ObjectID) (*entities.Event, error)
 	Update(ctx context.Context, event *entities.Event) error
 	FindAllByUserID(ctx context.Context, userID primitive.ObjectID, limit, offset int64) ([]*entities.Event, error)
+	FindAllByRelationshipID(ctx context.Context, relationshipID primitive.ObjectID, limit, offset int64) ([]*entities.Event, error)
 }

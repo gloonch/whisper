@@ -13,34 +13,35 @@ import (
 )
 
 type EventUseCase interface {
-    RegisterEvent(ctx context.Context, userID primitive.ObjectID, req *dto.CreateEventRequest) (*dto.EventResponse, error)
+	RegisterEvent(ctx context.Context, userID primitive.ObjectID, req *dto.CreateEventRequest) (*dto.EventResponse, error)
 	GetEventByID(ctx context.Context, userID primitive.ObjectID, id primitive.ObjectID) (*dto.EventResponse, error)
 	UpdateEventByID(ctx context.Context, userID primitive.ObjectID, id primitive.ObjectID, req *dto.UpdateEventRequest) (*dto.EventResponse, error)
 	GetAllEventsByUserID(ctx context.Context, userID primitive.ObjectID, limit, offset int64) ([]*dto.EventResponse, error)
+	GetAllEventsByCurrentRelationship(ctx context.Context, userID primitive.ObjectID, limit, offset int64) ([]*dto.EventResponse, error)
 }
 
 type eventUseCase struct {
-    repo       domainRepos.EventRepository
-    relRepo    domainRepos.RelationshipRepository
+	repo    domainRepos.EventRepository
+	relRepo domainRepos.RelationshipRepository
 	// could inject logger later; using std log for now
 }
 
 func NewEventUseCase(repo domainRepos.EventRepository, relRepo domainRepos.RelationshipRepository) EventUseCase {
-    return &eventUseCase{repo: repo, relRepo: relRepo}
+	return &eventUseCase{repo: repo, relRepo: relRepo}
 }
 
 func (uc *eventUseCase) RegisterEvent(ctx context.Context, userID primitive.ObjectID, req *dto.CreateEventRequest) (*dto.EventResponse, error) {
-    log.Printf("[EVENT][CREATE][START] user=%s title=%s type=%s", userID.Hex(), req.Title, req.Type)
-    // Resolve current relationship for user
-    rel, err := uc.relRepo.FindCurrentByUserID(ctx, userID)
-    if err != nil {
-        log.Printf("[EVENT][CREATE][ERROR] user=%s no current relationship: %v", userID.Hex(), err)
-        return nil, err
-    }
-    ev := entities.NewEvent(req.Title, req.Type, req.Date, rel.ID, userID)
+	log.Printf("[EVENT][CREATE][START] user=%s title=%s type=%s", userID.Hex(), req.Title, req.Type)
+	// Resolve current relationship for user
+	rel, err := uc.relRepo.FindCurrentByUserID(ctx, userID)
+	if err != nil {
+		log.Printf("[EVENT][CREATE][ERROR] user=%s no current relationship: %v", userID.Hex(), err)
+		return nil, err
+	}
+	ev := entities.NewEvent(req.Title, req.Type, req.Date, rel.ID, userID)
 	ev.Description = req.Description
 
-    if err := uc.repo.Create(ctx, ev); err != nil {
+	if err := uc.repo.Create(ctx, ev); err != nil {
 		log.Printf("[EVENT][CREATE][ERROR] user=%s err=%v", userID.Hex(), err)
 		return nil, err
 	}
@@ -103,6 +104,26 @@ func (uc *eventUseCase) GetAllEventsByUserID(ctx context.Context, userID primiti
 		res = append(res, toEventResponse(e))
 	}
 	log.Printf("[EVENT][LIST][DONE] user=%s count=%d", userID.Hex(), len(res))
+	return res, nil
+}
+
+func (uc *eventUseCase) GetAllEventsByCurrentRelationship(ctx context.Context, userID primitive.ObjectID, limit, offset int64) ([]*dto.EventResponse, error) {
+	log.Printf("[EVENT][LIST_REL][START] user=%s limit=%d offset=%d", userID.Hex(), limit, offset)
+	rel, err := uc.relRepo.FindCurrentByUserID(ctx, userID)
+	if err != nil {
+		log.Printf("[EVENT][LIST_REL][ERROR] user=%s no current relationship: %v", userID.Hex(), err)
+		return nil, err
+	}
+	events, err := uc.repo.FindAllByRelationshipID(ctx, rel.ID, limit, offset)
+	if err != nil {
+		log.Printf("[EVENT][LIST_REL][ERROR] user=%s err=%v", userID.Hex(), err)
+		return nil, err
+	}
+	res := make([]*dto.EventResponse, 0, len(events))
+	for _, e := range events {
+		res = append(res, toEventResponse(e))
+	}
+	log.Printf("[EVENT][LIST_REL][DONE] user=%s count=%d", userID.Hex(), len(res))
 	return res, nil
 }
 

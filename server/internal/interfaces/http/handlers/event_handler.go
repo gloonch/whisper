@@ -128,7 +128,8 @@ func (h *EventHandler) GetAllEventsByUserID(c *gin.Context) {
 	limit, _ := strconv.ParseInt(limitStr, 10, 64)
 	offset, _ := strconv.ParseInt(offsetStr, 10, 64)
 
-	res, err := h.uc.GetAllEventsByUserID(c.Request.Context(), userID, limit, offset)
+	// Prefer relationship-wide listing so both partners see shared timeline
+	res, err := h.uc.GetAllEventsByCurrentRelationship(c.Request.Context(), userID, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Code: http.StatusInternalServerError, Message: err.Error()})
 		return
