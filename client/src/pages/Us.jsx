@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import RelationshipTimeline from "../components/RelationshipTimeline";
 import ExploreBar from "../components/ExploreBar";
 import ExploreGrid from "../components/ExploreGrid";
 import ExploreModal from "../components/ExploreModal";
 import TodoListView from "../components/TodoListView";
 import Toast from "../components/Toast";
+import AlertDialog from "../components/AlertDialog";
 import { usePublicEvents } from "../hooks/usePublicEvents";
 import { useTodoList } from "../hooks/useTodoList";
 import { eventsApi, relationshipsApi } from "../lib/api";
 
 function Us() {
   const [events, setEvents] = useState([]);
+  const inviteRef = useRef(null);
   
   // Explore & Todo hooks
   const { publicEvents, addToPublicEvents, removeFromPublicEvents } = usePublicEvents();
@@ -23,6 +26,9 @@ function Us() {
   const [selectedExploreEvent, setSelectedExploreEvent] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
+  const [showRelAlert, setShowRelAlert] = useState(false);
+  const navigate = useNavigate();
+
 
   const handleEventsChange = (newEvents) => {
     setEvents(newEvents);
@@ -64,16 +70,25 @@ function Us() {
       date: eventData.date ? new Date(eventData.date).toISOString() : new Date().toISOString(),
       type: eventData.type || 'DATE',
     };
-    const created = await eventsApi.create(payload);
-    const mapped = {
-      id: created.id,
-      date: created.date?.split('T')[0],
-      type: created.type,
-      title: created.title,
-      imageUrl: created.image?.url || "",
-    };
-    setEvents(prev => [...prev, mapped]);
-    showToastMessage('Event created successfully');
+    try {
+      const created = await eventsApi.create(payload);
+      const mapped = {
+        id: created.id,
+        date: created.date?.split('T')[0],
+        type: created.type,
+        title: created.title,
+        imageUrl: created.image?.url || "",
+      };
+      setEvents(prev => [...prev, mapped]);
+      showToastMessage('Event created successfully');
+    } catch (e) {
+      const msg = e?.response?.data?.message || '';
+      if (msg.toLowerCase().includes('no current relationship') || e?.response?.status === 400 || e?.response?.status === 409 || e?.response?.status === 500) {
+        setShowRelAlert(true);
+      // } else {
+        // showToastMessage('Failed to create event');
+      }
+    }
   };
 
   // Update event handler used by RelationshipTimeline modal in edit mode
@@ -160,16 +175,15 @@ function Us() {
     handleEventsChange(updatedEvents);
   };
 
+  const scrollToInvite = () => {
+    setShowRelAlert(false);
+
+    navigate('/Me');
+  };
+
   return (
     <div className="flex flex-col h-full bg-bg-deep">
-      {/* Explore Bar */}
-      {/* <ExploreBar
-        publicEvents={publicEvents}
-        todoCount={todoList.length}
-        onShowExploreGrid={handleShowExploreGrid}
-        onShowTodoList={handleShowTodoList}
-      /> */}
-
+      {/* Timeline */}
       <div className="flex-1 overflow-y-auto">
         <RelationshipTimeline 
           events={events} 
@@ -180,6 +194,9 @@ function Us() {
           onUpdateEvent={handleUpdateEventFromTimeline}
         />
       </div>
+
+      {/* Invite/Join Box anchor */}
+      <div ref={inviteRef} />
 
       {/* Explore Grid */}
       <ExploreGrid
@@ -210,6 +227,21 @@ function Us() {
         message={toastMessage}
         isVisible={showToast}
         onClose={() => setShowToast(false)}
+      />
+
+      {/* Relationship required dialog */}
+      <AlertDialog
+        isOpen={showRelAlert}
+        title="Relationship required"
+        message={
+          "To create an event, you need to be connected in a relationship.\n\n" +
+          "You can:\n- Generate an invite code and share it with your partner\n- Or enter your partner's invite code to join"
+        }
+        actions={[
+          { label: "Later", onClick: () => setShowRelAlert(false) },
+          { label: "Connect partner", variant: "primary", onClick: scrollToInvite },
+        ]}
+        onClose={() => setShowRelAlert(false)}
       />
     </div>
   );

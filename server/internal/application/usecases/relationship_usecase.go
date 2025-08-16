@@ -114,7 +114,7 @@ func (uc *relationshipUseCase) JoinWithInviteCode(ctx context.Context, userID pr
 		}
 	}
 	log.Printf("[REL][JOIN][DONE] user=%s rel=%s", userID.Hex(), rel.ID.Hex())
-	return toRelationshipResponse(rel), nil
+	return toRelationshipResponseWithUsers(rel, uc.userRepo, ctx), nil
 }
 
 func (uc *relationshipUseCase) GetCurrentRelationship(ctx context.Context, userID primitive.ObjectID) (*dto.RelationshipResponse, error) {
@@ -125,7 +125,7 @@ func (uc *relationshipUseCase) GetCurrentRelationship(ctx context.Context, userI
 		return nil, err
 	}
 	log.Printf("[REL][CURRENT][DONE] user=%s rel=%s", userID.Hex(), rel.ID.Hex())
-	return toRelationshipResponse(rel), nil
+	return toRelationshipResponseWithUsers(rel, uc.userRepo, ctx), nil
 }
 
 func (uc *relationshipUseCase) DisconnectRelationship(ctx context.Context, userID primitive.ObjectID) error {
@@ -152,10 +152,15 @@ func (uc *relationshipUseCase) DisconnectRelationship(ctx context.Context, userI
 	return nil
 }
 
-func toRelationshipResponse(rel *entities.Relationship) *dto.RelationshipResponse {
+func toRelationshipResponseWithUsers(rel *entities.Relationship, userRepo domainRepos.UserRepository, ctx context.Context) *dto.RelationshipResponse {
 	partners := make([]dto.RelationshipPartner, 0, len(rel.Partners))
 	for _, p := range rel.Partners {
-		partners = append(partners, dto.RelationshipPartner{UserID: p.UserID.Hex(), JoinedAt: p.JoinedAt})
+		rp := dto.RelationshipPartner{UserID: p.UserID.Hex(), JoinedAt: p.JoinedAt}
+		if user, err := userRepo.FindByID(ctx, p.UserID); err == nil && user != nil {
+			rp.Username = user.Username
+			rp.Name = user.Name
+		}
+		partners = append(partners, rp)
 	}
 	return &dto.RelationshipResponse{
 		ID:         rel.ID.Hex(),

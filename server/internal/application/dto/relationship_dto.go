@@ -26,5 +26,7 @@ type RelationshipResponse struct {
 
 type RelationshipPartner struct {
 	UserID   string    `json:"userId"`
+	Username string    `json:"username,omitempty"`
+	Name     string    `json:"name,omitempty"`
 	JoinedAt time.Time `json:"joinedAt"`
 }

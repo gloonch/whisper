@@ -10,8 +10,9 @@ export default function PartnerInviteBox() {
 
   const [inviteState, setInviteState] = useState({
     inviteCode: null,
-    role: null, // "inviter" | "invitee"
-    joined: false
+    partnerId: null,
+    joined: false,
+    partnerName: null,
   });
   
   const [inputCode, setInputCode] = useState("");
@@ -19,42 +20,61 @@ export default function PartnerInviteBox() {
   const [showToast, setShowToast] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load invite state from localStorage
-  useEffect(() => {
-    const savedInvite = localStorage.getItem('maha_partner_invite');
-    if (savedInvite) {
-      try {
-        const parsed = JSON.parse(savedInvite);
-        setInviteState(parsed);
-        if (parsed.inviteCode) setInputCode(parsed.inviteCode);
-      } catch (error) {
-        console.error('Error loading invite data:', error);
-      }
-    }
-  }, []);
-
-  // Save invite state to localStorage
-  const saveInviteState = (newState) => {
-    setInviteState(newState);
-    localStorage.setItem('maha_partner_invite', JSON.stringify(newState));
-  };
-
   const showToastMessage = (message) => {
     setToastMessage(message);
     setShowToast(true);
+  };
+
+  // Fetch current relationship on mount
+  useEffect(() => {
+    const fetchCurrent = async () => {
+      try {
+        const rel = await relationshipsApi.getCurrent();
+        const partners = rel?.partners || [];
+        const partner = partners.find(p => p.userId !== currentUser?.id) || partners[0];
+        
+        console.log(rel)
+        setInviteState({
+          inviteCode: rel?.inviteCode || null,
+          partnerId: partner?.userId || null,
+          joined: !!rel?.id,
+          partnerName: partner?.name || partner?.username || null,
+        });
+        if (rel?.inviteCode) setInputCode(rel.inviteCode);
+      } catch (_) {
+        // no active relationship; keep default state
+        setInviteState({ inviteCode: null, partnerId: null, joined: false, partnerName: null });
+      }
+    };
+    fetchCurrent();
+  }, []);
+
+  const refreshCurrent = async () => {
+    try {
+      const rel = await relationshipsApi.getCurrent();
+      const partners = rel?.partners || [];
+      const partner = partners.find(p => p.userId !== currentUser?.id) || partners[0];
+      setInviteState({
+        inviteCode: rel?.inviteCode || null,
+        partnerId: partner?.userId || null,
+        joined: !!rel?.id,
+        partnerName: partner?.name || partner?.username || null,
+      });
+      if (rel?.inviteCode) setInputCode(rel.inviteCode);
+    } catch (_) {
+      setInviteState({ inviteCode: null, partnerId: null, joined: false, partnerName: null });
+    }
   };
 
   // Generate invite code via API (requires firstMeetingDate)
   const generateInviteCode = async () => {
     setIsLoading(true);
     try {
-      // For now use today's date as firstMeetingDate; can be collected via UI later
       const firstMeetingDate = new Date().toISOString();
       const data = await relationshipsApi.generateInvite(firstMeetingDate);
       const code = data.inviteCode;
-      const newState = { inviteCode: code, role: "inviter", joined: false };
-      saveInviteState(newState);
-      setInputCode(code); // prefill input under it
+      setInviteState(prev => ({ ...prev, inviteCode: code, joined: false, partnerName: null }));
+      setInputCode(code);
       showToastMessage(`Invite code generated! Share "${code}" with your partner 💌`);
     } catch (e) {
       showToastMessage(e?.response?.data?.message || 'Failed to generate invite');
@@ -65,12 +85,14 @@ export default function PartnerInviteBox() {
 
   // Copy invite code to clipboard
   const handleCopy = async () => {
+    const code = inviteState.inviteCode || inputCode;
+    if (!code) return;
     try {
-      await navigator.clipboard.writeText(inviteState.inviteCode || inputCode);
+      await navigator.clipboard.writeText(code);
       showToastMessage('Invite code copied to clipboard! 📋');
     } catch (error) {
       const textArea = document.createElement('textarea');
-      textArea.value = inviteState.inviteCode || inputCode;
+      textArea.value = code;
       document.body.appendChild(textArea);
       textArea.select();
       document.execCommand('copy');
@@ -92,21 +114,9 @@ export default function PartnerInviteBox() {
     setIsLoading(true);
     try {
       await relationshipsApi.joinWithCode(inputCode.trim().toUpperCase());
-      const newState = { inviteCode: inputCode.toUpperCase(), role: "invitee", joined: true };
-      saveInviteState(newState);
-
-      // Fetch current relationship to identify partner id and show in toast
-      try {
-        const rel = await relationshipsApi.getCurrent();
-        const partners = rel?.partners || [];
-        const currentUserId = currentUser?.id;
-        const partner = partners.find(p => p.userId !== currentUserId) || partners[0];
-        const partnerLabel = partner?.userId ? `(${partner.userId.slice(0,6)}...)` : '';
-        showToastMessage(`Connected with partner ${partnerLabel} 🎉`);
-      } catch (_) {
-        showToastMessage('Connected with partner! 🎉');
-      }
-
+      await refreshCurrent();
+      const label = inviteState.partnerId ? `(${inviteState.partnerId.slice(0,6)}...)` : '';
+      showToastMessage(`Connected with partner ${label} 🎉`);
       setInputCode("");
     } catch (e) {
       showToastMessage(e?.response?.data?.message || 'Failed to join with code');
@@ -120,14 +130,12 @@ export default function PartnerInviteBox() {
     if (window.confirm('Are you sure you want to disconnect from your partner? This will remove the shared timeline connection.')) {
       try {
         await relationshipsApi.disconnect();
+        await refreshCurrent();
+        setInputCode("");
+        showToastMessage('Connection removed successfully');
       } catch (e) {
-        // Even if API fails, continue local cleanup
+        showToastMessage(e?.response?.data?.message || 'Failed to disconnect');
       }
-      const newState = { inviteCode: null, role: null, joined: false };
-      saveInviteState(newState);
-      localStorage.removeItem('maha_partner_invite');
-      setInputCode("");
-      showToastMessage('Connection removed successfully');
     }
   };
 
@@ -206,7 +214,9 @@ export default function PartnerInviteBox() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                   </svg>
                 </div>
-                <h4 className="text-cream font-medium mb-1">Connected with partner! 🎉</h4>
+                <h4 className="text-cream font-medium mb-1">
+                  Connected with: {inviteState.partnerName}
+                </h4>
               </div>
 
               {/* Invite Code Display (optional) */}
