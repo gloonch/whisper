@@ -2,7 +2,7 @@ root = "."
 tmp_dir = "tmp"
 
 [build]
-cmd = "go run ./cmd/api/main.go"
+cmd = "go build -o tmp/server ./cmd/api"
 bin = "tmp/server"
 include_ext = ["go"]
 exclude_dir = ["tmp", "bin", "vendor", "node_modules"]

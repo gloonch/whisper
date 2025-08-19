@@ -1,7 +1,7 @@
 # =========================================
 # Dev target (hot reload via Air)
 # =========================================
-FROM golang:1.23 AS dev
+FROM golang:1.24 AS dev
 WORKDIR /app
 
 # Cache modules
@@ -23,7 +23,7 @@ CMD ["air", "-c", ".air.toml"]
 # =========================================
 # Prod target (build binary)
 # =========================================
-FROM golang:1.23 AS build
+FROM golang:1.24 AS build
 WORKDIR /app
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /app/bin/server ./cmd/api/main.go

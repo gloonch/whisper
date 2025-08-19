@@ -55,6 +55,7 @@ services:
   api:
     build:
       context: ./server
+      target: dev
     
     # Dependency management
     depends_on:
@@ -80,7 +81,7 @@ services:
     
     # Health check
     healthcheck:
-      test: ["CMD", "/main", "health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
