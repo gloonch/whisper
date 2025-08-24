@@ -55,6 +55,11 @@ func (r *eventRepositoryImpl) Update(ctx context.Context, event *domainEntities.
 	return err
 }
 
+func (r *eventRepositoryImpl) Delete(ctx context.Context, id primitive.ObjectID) error {
+	_, err := r.db.Events().DeleteOne(ctx, bson.M{"_id": id})
+	return err
+}
+
 func (r *eventRepositoryImpl) FindAllByUserID(ctx context.Context, userID primitive.ObjectID, limit, offset int64) ([]*domainEntities.Event, error) {
 	// Find events created by this user, newest first
 	findOpts := options.Find()

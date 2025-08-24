@@ -46,7 +46,8 @@ function Us() {
           date: ev.date?.split('T')[0],
           type: ev.type,
           title: ev.title,
-          imageUrl: ev.image?.url || "",
+          imageUrl: ev.image?.data ? `data:image/jpeg;base64,${ev.image.data}` : "",
+          image: ev.image
         }));
         setEvents(mapped);
       } catch (e) {
@@ -70,6 +71,9 @@ function Us() {
       date: eventData.date ? new Date(eventData.date).toISOString() : new Date().toISOString(),
       type: eventData.type || 'DATE',
     };
+    if (eventData.image) {
+      payload.image = eventData.image;
+    }
     try {
       const created = await eventsApi.create(payload);
       const mapped = {
@@ -77,7 +81,8 @@ function Us() {
         date: created.date?.split('T')[0],
         type: created.type,
         title: created.title,
-        imageUrl: created.image?.url || "",
+        imageUrl: created.image?.data ? `data:image/jpeg;base64,${created.image.data}` : (eventData.imageUrl || ""),
+        image: created.image
       };
       setEvents(prev => [...prev, mapped]);
       showToastMessage('Event created successfully');
@@ -99,16 +104,35 @@ function Us() {
       date: eventData.date ? new Date(eventData.date).toISOString() : undefined,
       type: eventData.type,
     };
-    const updated = await eventsApi.updateById(eventData.id, payload);
-    const mapped = {
-      id: updated.id,
-      date: updated.date?.split('T')[0],
-      type: updated.type,
-      title: updated.title,
-      imageUrl: updated.image?.url || "",
-    };
-    setEvents(prev => prev.map(e => e.id === mapped.id ? mapped : e));
-    showToastMessage('Event updated successfully');
+    if (eventData.image) {
+      payload.image = eventData.image;
+    }
+    try {
+      const updated = await eventsApi.updateById(eventData.id, payload);
+      const mapped = {
+        id: updated.id,
+        date: updated.date?.split('T')[0],
+        type: updated.type,
+        title: updated.title,
+        imageUrl: updated.image?.data ? `data:image/jpeg;base64,${updated.image.data}` : (eventData.imageUrl || ""),
+        image: updated.image
+      };
+      setEvents(prev => prev.map(e => e.id === mapped.id ? mapped : e));
+      showToastMessage('Event updated successfully');
+    } catch (e) {
+      showToastMessage('Failed to update event');
+    }
+  };
+
+  // Delete event handler
+  const handleDeleteEventFromTimeline = async (eventId) => {
+    try {
+      await eventsApi.delete(eventId);
+      setEvents(prev => prev.filter(e => e.id !== eventId));
+      showToastMessage('Event deleted successfully');
+    } catch (e) {
+      showToastMessage('Failed to delete event');
+    }
   };
 
   // Explore functionality
@@ -192,6 +216,7 @@ function Us() {
           showToast={showToastMessage}
           onCreateEvent={handleCreateEventFromTimeline}
           onUpdateEvent={handleUpdateEventFromTimeline}
+          onDeleteEvent={handleDeleteEventFromTimeline}
         />
       </div>
 

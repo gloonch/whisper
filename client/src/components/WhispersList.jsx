@@ -5,12 +5,10 @@ import WhisperCard from "./WhisperCard";
 function WhispersList({ 
   whispers = [], 
   selectedDate, 
-  onMarkDone, 
   onConvertToEvent, 
   onDeleteWhisper,
   onAddWhisper 
 }) {
-  // عنوان ساده و ثابت
   const getWhispersTitle = () => {
     return "💬 Whispers of Today";
   };
@@ -44,13 +42,6 @@ function WhispersList({
         <h3 className="text-lg font-semibold text-white">
           {getWhispersTitle()}
         </h3>
-        
-        {/* Quick stats */}
-        {filteredWhispers.length > 0 && (
-          <div className="text-sm text-white/60">
-            {filteredWhispers.filter(w => w.isDone).length} of {filteredWhispers.length} done
-          </div>
-        )}
       </div>
 
       {/* Whispers List */}
@@ -61,7 +52,6 @@ function WhispersList({
               key={whisper.id}
               whisper={whisper}
               index={index}
-              onMarkDone={onMarkDone}
               onConvertToEvent={onConvertToEvent}
               onDelete={onDeleteWhisper}
             />

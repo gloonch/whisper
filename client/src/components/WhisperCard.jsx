@@ -4,7 +4,6 @@ import { RECURRENCE_OPTIONS, WHISPER_CATEGORIES } from "./WhisperTypes";
 
 function WhisperCard({ 
   whisper, 
-  onMarkDone, 
   onConvertToEvent, 
   onDelete,
   index = 0 
@@ -26,14 +25,8 @@ function WhisperCard({
     }
   };
 
-  const handleMarkDone = () => {
-    onMarkDone?.(whisper.id);
-  };
-
   const handleConvertToEvent = () => {
-    if (whisper.canBecomeEvent && whisper.isDone) {
-      onConvertToEvent?.(whisper);
-    }
+    onConvertToEvent?.(whisper);
   };
 
   const handleDelete = () => {
@@ -45,11 +38,7 @@ function WhisperCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
-      className={`p-4 rounded-2xl border-2 transition-all duration-300 ${
-        whisper.isDone 
-          ? 'bg-white/5 border-green-400/30 opacity-75' 
-          : 'bg-white/10 border-white/20 hover:border-white/40'
-      }`}
+      className={`p-4 rounded-2xl border-2 transition-all duration-300 bg-white/10 border-white/20 hover:border-white/40`}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
@@ -93,45 +82,21 @@ function WhisperCard({
 
         {/* Actions */}
         <div className={`flex items-center space-x-2 transition-opacity duration-200 ${
-          showActions || whisper.isDone ? 'opacity-100' : 'opacity-0'
+          showActions ? 'opacity-100' : 'opacity-0'
         }`}>
-          {!whisper.isDone ? (
+          {
             <motion.button
-              onClick={handleMarkDone}
-              className="p-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 transition-colors"
+              onClick={handleConvertToEvent}
+              className="p-2 rounded-lg bg-ruby-accent/20 hover:bg-ruby-accent/30 transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              title="Mark as done"
+              title="Add to timeline"
             >
-              <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg className="w-4 h-4 text-ruby-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
             </motion.button>
-          ) : (
-            <div className="flex items-center space-x-1">
-              {/* Done indicator */}
-              <div className="p-2 rounded-lg bg-green-500/20">
-                <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                </svg>
-              </div>
-
-              {/* Convert to Event button */}
-              {whisper.canBecomeEvent && (
-                <motion.button
-                  onClick={handleConvertToEvent}
-                  className="p-2 rounded-lg bg-ruby-accent/20 hover:bg-ruby-accent/30 transition-colors"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  title="Add to timeline"
-                >
-                  <svg className="w-4 h-4 text-ruby-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                </motion.button>
-              )}
-            </div>
-          )}
+          }
 
           {/* Delete button */}
           <motion.button
@@ -148,15 +113,7 @@ function WhisperCard({
         </div>
       </div>
 
-      {/* Progress indicator for everyday whispers */}
-      {whisper.recurrence === 'everyday' && (
-        <div className="mt-3 pt-3 border-t border-white/10">
-          <div className="flex items-center justify-between text-xs text-white/60">
-            <span>Daily reminder</span>
-            <span>{whisper.isDone ? 'Done today ✓' : 'Pending'}</span>
-          </div>
-        </div>
-      )}
+      {/* No done state or progress UI */}
     </motion.div>
   );
 }

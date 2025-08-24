@@ -14,7 +14,7 @@ const EVENT_COLORS = {
   NOW: "#FFFFFF",
 };
 
-export default function RelationshipTimeline({ events = [], onEventsChange, onTogglePublic, showToast, onCreateEvent, onUpdateEvent }) {
+export default function RelationshipTimeline({ events = [], onEventsChange, onTogglePublic, showToast, onCreateEvent, onUpdateEvent, onDeleteEvent }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [modalMode, setModalMode] = useState("add"); // "add" or "edit" or "view"
@@ -73,8 +73,13 @@ export default function RelationshipTimeline({ events = [], onEventsChange, onTo
   };
 
   const handleDeleteEvent = (eventId) => {
-    const newEvents = events.filter(e => e.id !== eventId);
-    onEventsChange?.(newEvents);
+    if (onDeleteEvent) {
+      onDeleteEvent(eventId);
+    } else {
+      // Fallback to local state update
+      const newEvents = events.filter(e => e.id !== eventId);
+      onEventsChange?.(newEvents);
+    }
   };
 
   const formatDate = (dateString) => {

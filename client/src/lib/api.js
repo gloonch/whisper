@@ -22,8 +22,10 @@ export const relationshipsApi = {
 
 // Events API
 export const eventsApi = {
-  create: async ({ title, description, date, type }) => {
-    const res = await axios.post('/events', { title, description, date, type });
+  create: async ({ title, description, date, type, image }) => {
+    const payload = { title, description, date, type };
+    if (image) payload.image = image;
+    const res = await axios.post('/events', payload);
     return res.data; // EventResponse
   },
   getById: async (id) => {
@@ -34,8 +36,37 @@ export const eventsApi = {
     const res = await axios.put(`/events/${id}`, payload);
     return res.data;
   },
+  delete: async (id) => {
+    const res = await axios.delete(`/events/${id}`);
+    return res.data;
+  },
   listMine: async ({ limit = 50, offset = 0 } = {}) => {
     const res = await axios.get(`/events`);
     return res.data;
   },
+};
+
+// Whispers API
+export const whispersApi = {
+  listMine: async ({ limit = 100, offset = 0 } = {}) => {
+    const res = await axios.get(`/whispers`);
+    return res.data;
+  },
+  create: async ({ type, text, recurrence, date }) => {
+    const res = await axios.post(`/whispers`, { type, text, recurrence, date });
+    return res.data;
+  },
+  update: async (id, payload) => {
+    const res = await axios.put(`/whispers/${id}`, payload);
+    return res.data;
+  },
+  delete: async (id) => {
+    const res = await axios.delete(`/whispers/${id}`);
+    return res.data;
+  },
+  convertToEvent: async (id, payload) => {
+    // payload can be undefined or { image: { type, data, filename } }
+    const res = await axios.post(`/whispers/${id}/convert`, payload || {});
+    return res.data;
+  }
 };

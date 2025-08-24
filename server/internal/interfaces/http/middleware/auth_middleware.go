@@ -8,6 +8,7 @@ import (
 	"whisper-server/internal/infrastructure/services"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func AuthMiddleware(jwt services.JWTService) gin.HandlerFunc {
@@ -27,4 +28,23 @@ func AuthMiddleware(jwt services.JWTService) gin.HandlerFunc {
 		c.Set("username", claims.Username)
 		c.Next()
 	}
+}
+
+// GetUserIDFromContext extracts the authenticated user's ObjectID from context.
+// It panics if the value is missing or invalid; handlers should ensure AuthMiddleware is used.
+func GetUserIDFromContext(c *gin.Context) primitive.ObjectID {
+	v, exists := c.Get("userID")
+	if !exists {
+		return primitive.NilObjectID
+	}
+	if s, ok := v.(string); ok {
+		oid, err := primitive.ObjectIDFromHex(s)
+		if err == nil {
+			return oid
+		}
+	}
+	if oid, ok := v.(primitive.ObjectID); ok {
+		return oid
+	}
+	return primitive.NilObjectID
 }

@@ -116,6 +116,29 @@ func (h *EventHandler) UpdateEventByID(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+func (h *EventHandler) DeleteEventByID(c *gin.Context) {
+	userID, ok := getUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Code: http.StatusUnauthorized, Message: "Unauthorized"})
+		return
+	}
+	idStr := c.Param("id")
+	oid, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Code: http.StatusBadRequest, Message: "invalid id"})
+		return
+	}
+	if err := h.uc.DeleteEventByID(c.Request.Context(), userID, oid); err != nil {
+		if err == usecases.ErrForbidden {
+			c.JSON(http.StatusForbidden, dto.ErrorResponse{Code: http.StatusForbidden, Message: "forbidden"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Code: http.StatusInternalServerError, Message: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 func (h *EventHandler) GetAllEventsByUserID(c *gin.Context) {
 	userID, ok := getUserID(c)
 	if !ok {

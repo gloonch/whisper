@@ -23,17 +23,20 @@ func SetupRoutes(router *gin.Engine, db *database.MongoDB, cfg *config.Config) {
 	userRepo := repositories.NewUserRepository(db)
 	relationshipRepo := repositories.NewRelationshipRepository(db)
 	inviteRepo := repositories.NewInviteRepository(db)
+	eventRepo := repositories.NewEventRepository(db)
+	whisperRepo := repositories.NewWhisperRepository(db)
 
 	// Initialize use cases
 	authUseCase := usecases.NewAuthUseCase(userRepo, jwtService, passwordService)
 	relationshipUseCase := usecases.NewRelationshipUseCase(relationshipRepo, userRepo, inviteRepo)
-	eventRepo := repositories.NewEventRepository(db)
 	eventUseCase := usecases.NewEventUseCase(eventRepo, relationshipRepo)
+	whisperUsecase := usecases.NewWhisperUseCase(whisperRepo, relationshipRepo, eventRepo)
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(authUseCase)
 	relationshipHandler := handlers.NewRelationshipHandler(relationshipUseCase)
 	eventHandler := handlers.NewEventHandler(eventUseCase)
+	whisperHandler := handlers.NewWhisperHandler(whisperUsecase)
 
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
@@ -67,8 +70,22 @@ func SetupRoutes(router *gin.Engine, db *database.MongoDB, cfg *config.Config) {
 				eventRoutes.POST("", eventHandler.RegisterEvent)
 				eventRoutes.GET("/:id", eventHandler.GetEventByID)
 				eventRoutes.PUT("/:id", eventHandler.UpdateEventByID)
+				eventRoutes.DELETE("/:id", eventHandler.DeleteEventByID)
 				eventRoutes.GET("/", eventHandler.GetAllEventsByUserID)
 				eventRoutes.GET("", eventHandler.GetAllEventsByUserID)
+			}
+
+			// Whispers routes (protected)
+			whisperRoutes := protected.Group("/whispers")
+			{
+				// Support both with and without trailing slash
+				whisperRoutes.GET("/", whisperHandler.List)
+				whisperRoutes.GET("", whisperHandler.List)
+				whisperRoutes.POST("/", whisperHandler.Create)
+				whisperRoutes.POST("", whisperHandler.Create)
+				whisperRoutes.PUT(":id", whisperHandler.Update)
+				whisperRoutes.DELETE(":id", whisperHandler.Delete)
+				whisperRoutes.POST(":id/convert", whisperHandler.ConvertToEvent)
 			}
 		}
 
@@ -94,23 +111,6 @@ func SetupRoutes(router *gin.Engine, db *database.MongoDB, cfg *config.Config) {
 			relationshipRoutes.POST("/join", relationshipHandler.Join)
 			relationshipRoutes.GET("/current", relationshipHandler.Current)
 			relationshipRoutes.DELETE("/disconnect", relationshipHandler.Disconnect)
-		}
-
-		// Whispers routes
-		whisperRoutes := v1.Group("/whispers")
-		{
-			whisperRoutes.GET("/", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
-			whisperRoutes.POST("/", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
-			whisperRoutes.PUT("/:id/done", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
-			whisperRoutes.DELETE("/:id", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
 		}
 
 		// Todos routes

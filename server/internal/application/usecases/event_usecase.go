@@ -16,6 +16,7 @@ type EventUseCase interface {
 	RegisterEvent(ctx context.Context, userID primitive.ObjectID, req *dto.CreateEventRequest) (*dto.EventResponse, error)
 	GetEventByID(ctx context.Context, userID primitive.ObjectID, id primitive.ObjectID) (*dto.EventResponse, error)
 	UpdateEventByID(ctx context.Context, userID primitive.ObjectID, id primitive.ObjectID, req *dto.UpdateEventRequest) (*dto.EventResponse, error)
+	DeleteEventByID(ctx context.Context, userID primitive.ObjectID, id primitive.ObjectID) error
 	GetAllEventsByUserID(ctx context.Context, userID primitive.ObjectID, limit, offset int64) ([]*dto.EventResponse, error)
 	GetAllEventsByCurrentRelationship(ctx context.Context, userID primitive.ObjectID, limit, offset int64) ([]*dto.EventResponse, error)
 }
@@ -40,6 +41,14 @@ func (uc *eventUseCase) RegisterEvent(ctx context.Context, userID primitive.Obje
 	}
 	ev := entities.NewEvent(req.Title, req.Type, req.Date, rel.ID, userID)
 	ev.Description = req.Description
+	if req.Image != nil && req.Image.Type != "" {
+		ev.Image = &entities.EventImage{
+			Type:       req.Image.Type,
+			Data:       req.Image.Data,
+			Filename:   req.Image.Filename,
+			UploadedAt: time.Now(),
+		}
+	}
 
 	if err := uc.repo.Create(ctx, ev); err != nil {
 		log.Printf("[EVENT][CREATE][ERROR] user=%s err=%v", userID.Hex(), err)
@@ -83,6 +92,14 @@ func (uc *eventUseCase) UpdateEventByID(ctx context.Context, userID primitive.Ob
 		newDate = req.Date
 	}
 	ev.Update(req.Title, req.Description, newDate, req.Type)
+	if req.Image != nil && req.Image.Type != "" {
+		ev.Image = &entities.EventImage{
+			Type:       req.Image.Type,
+			Data:       req.Image.Data,
+			Filename:   req.Image.Filename,
+			UploadedAt: time.Now(),
+		}
+	}
 
 	if err := uc.repo.Update(ctx, ev); err != nil {
 		log.Printf("[EVENT][UPDATE][ERROR] save id=%s err=%v", id.Hex(), err)
@@ -90,6 +107,27 @@ func (uc *eventUseCase) UpdateEventByID(ctx context.Context, userID primitive.Ob
 	}
 	log.Printf("[EVENT][UPDATE][DONE] user=%s id=%s", userID.Hex(), id.Hex())
 	return toEventResponse(ev), nil
+}
+
+func (uc *eventUseCase) DeleteEventByID(ctx context.Context, userID primitive.ObjectID, id primitive.ObjectID) error {
+	log.Printf("[EVENT][DELETE][START] user=%s id=%s", userID.Hex(), id.Hex())
+	ev, err := uc.repo.FindByID(ctx, id)
+	if err != nil {
+		log.Printf("[EVENT][DELETE][ERROR] find id=%s err=%v", id.Hex(), err)
+		return err
+	}
+	// Authorization: allow any partner in the same active relationship
+	rel, err := uc.relRepo.FindCurrentByUserID(ctx, userID)
+	if err != nil || rel.ID != ev.RelationshipID {
+		log.Printf("[EVENT][DELETE][DENY] user=%s id=%s", userID.Hex(), id.Hex())
+		return ErrForbidden
+	}
+	if err := uc.repo.Delete(ctx, id); err != nil {
+		log.Printf("[EVENT][DELETE][ERROR] delete id=%s err=%v", id.Hex(), err)
+		return err
+	}
+	log.Printf("[EVENT][DELETE][DONE] user=%s id=%s", userID.Hex(), id.Hex())
+	return nil
 }
 
 func (uc *eventUseCase) GetAllEventsByUserID(ctx context.Context, userID primitive.ObjectID, limit, offset int64) ([]*dto.EventResponse, error) {
@@ -129,7 +167,7 @@ func (uc *eventUseCase) GetAllEventsByCurrentRelationship(ctx context.Context, u
 
 // helpers
 func toEventResponse(ev *entities.Event) *dto.EventResponse {
-	return &dto.EventResponse{
+	response := &dto.EventResponse{
 		ID:             ev.ID.Hex(),
 		Title:          ev.Title,
 		Description:    ev.Description,
@@ -142,6 +180,14 @@ func toEventResponse(ev *entities.Event) *dto.EventResponse {
 		CreatedAt:      ev.CreatedAt,
 		UpdatedAt:      ev.UpdatedAt,
 	}
+	if ev.Image != nil {
+		response.Image = &dto.EventImagePayload{
+			Type:     ev.Image.Type,
+			Data:     ev.Image.Data,
+			Filename: ev.Image.Filename,
+		}
+	}
+	return response
 }
 
 // common errors

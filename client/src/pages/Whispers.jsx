@@ -1,60 +1,21 @@
 import React, { useState } from "react";
-import ProfileNavbar from "../components/ProfileNavbar";
 import DateSelector from "../components/DateSelector";
 import MemoryEvents from "../components/MemoryEvents";
 import WhispersList from "../components/WhispersList";
 import WhisperModal from "../components/WhisperModal";
 import { createWhisperData } from "../components/WhisperTypes";
-
-// Sample events data - in real app this would come from RelationshipTimeline
-const getTodayBasedEvents = () => {
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
-  
-  // ایجاد eventهای نمونه برای سال‌های مختلف در همین روز
-  const currentYear = today.getFullYear();
-  const currentMonth = today.getMonth();
-  const currentDay = today.getDate();
-  
-  return [
-    {
-      id: "1",
-      date: new Date(currentYear - 1, currentMonth, currentDay).toISOString().split('T')[0],
-      type: "BIRTHDAY",
-      title: "Birthday",
-    },
-    {
-      id: "2", 
-      date: new Date(currentYear - 2, currentMonth, currentDay).toISOString().split('T')[0],
-      type: "TRIP",
-      title: "Trip to North",
-    },
-    {
-      id: "3",
-      date: todayStr,
-      type: "ANNIVERSARY", 
-      title: "First Date Anniversary",
-    },
-  ];
-};
+import { eventsApi, relationshipsApi, whispersApi } from "../lib/api";
+import { useNavigate } from "react-router-dom";
+import WhisperConvertModal from "../components/WhisperConvertModal";
 
 function Whispers() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [whisperModalOpen, setWhisperModalOpen] = useState(false);
-  const [events, setEvents] = useState(getTodayBasedEvents());
-  const [whispers, setWhispers] = useState([
-    // Sample whispers for testing
-    createWhisperData({
-      type: "cook_together",
-      recurrence: "once",
-      date: new Date().toISOString().split('T')[0]
-    }),
-    createWhisperData({
-      type: "watch_sunset", 
-      recurrence: "everyday",
-      date: new Date().toISOString().split('T')[0]
-    })
-  ]);
+  const [convertModalOpen, setConvertModalOpen] = useState(false);
+  const [whisperToConvert, setWhisperToConvert] = useState(null);
+  const [events, setEvents] = useState([]);
+  const [whispers, setWhispers] = useState([]);
+  const navigate = useNavigate();
 
   const handleDateSelect = (date) => {
     setSelectedDate(date);
@@ -65,41 +26,43 @@ function Whispers() {
     setWhisperModalOpen(true);
   };
 
-  const handleSaveWhisper = (whisperData) => {
-    const newWhispers = [...whispers, whisperData];
-    setWhispers(newWhispers);
-    console.log("Whisper added:", whisperData);
+  const handleSaveWhisper = async (whisperData) => {
+    try {
+      const payload = {
+        type: whisperData.type,
+        text: whisperData.type === 'custom' ? whisperData.text : whisperData.text,
+        recurrence: whisperData.recurrence,
+        date: new Date(whisperData.date).toISOString()
+      };
+      const created = await whispersApi.create(payload);
+      const mapped = {
+        id: created.id,
+        date: created.date?.split('T')[0],
+        type: created.type,
+        text: created.text,
+        recurrence: created.recurrence,
+        isDone: created.isDone || false
+      };
+      setWhispers(prev => [...prev, mapped]);
+    } catch (e) {
+      console.log('Whisper create failed:', e?.response?.data?.message || e.message);
+    }
   };
 
-  const handleMarkWhisperDone = (whisperId) => {
-    const newWhispers = whispers.map(whisper => 
-      whisper.id === whisperId 
-        ? { ...whisper, isDone: !whisper.isDone }
-        : whisper
-    );
-    setWhispers(newWhispers);
-  };
+  // No mark-done state any more
 
   const handleConvertWhisperToEvent = (whisper) => {
-    if (!whisper.canBecomeEvent || !whisper.isDone) return;
-
-    // Create event from whisper
-    const eventData = {
-      id: `event_from_whisper_${Date.now()}`,
-      title: whisper.text,
-      date: whisper.date,
-      type: "DATE", // Default event type
-    };
-
-    const newEvents = [...events, eventData];
-    setEvents(newEvents);
-
-    console.log("Whisper converted to event:", eventData);
+    setWhisperToConvert(whisper);
+    setConvertModalOpen(true);
   };
 
-  const handleDeleteWhisper = (whisperId) => {
-    const newWhispers = whispers.filter(w => w.id !== whisperId);
-    setWhispers(newWhispers);
+  const handleDeleteWhisper = async (whisperId) => {
+    try {
+      await whispersApi.delete(whisperId);
+      setWhispers(prev => prev.filter(w => w.id !== whisperId));
+    } catch (e) {
+      console.log('Whisper delete failed:', e?.response?.data?.message || e.message);
+    }
   };
 
   // فیلتر کردن eventهای مربوط به روز انتخاب شده (در همه سال‌ها)
@@ -118,6 +81,40 @@ function Whispers() {
   React.useEffect(() => {
     const today = new Date();
     setSelectedDate(today);
+  }, []);
+
+  // Load events from backend on mount (if relationship exists)
+  React.useEffect(() => {
+    const load = async () => {
+      try {
+        await relationshipsApi.getCurrent();
+        const list = await eventsApi.listMine({ limit: 100, offset: 0 });
+        const mapped = list.map(ev => ({
+          id: ev.id,
+          date: ev.date?.split('T')[0],
+          type: ev.type,
+          title: ev.title,
+          imageUrl: ev.image?.url || "",
+        }));
+        setEvents(mapped);
+        // load whispers
+        const whispersList = await whispersApi.listMine({ limit: 200, offset: 0 });
+        const mappedWhispers = whispersList.map(w => ({
+          id: w.id,
+          date: w.date?.split('T')[0],
+          type: w.type,
+          text: w.text,
+          recurrence: w.recurrence,
+          isDone: !!w.isDone,
+        }));
+        setWhispers(mappedWhispers);
+      } catch (e) {
+        setEvents([]);
+        setWhispers([]);
+        // optional: console.log('Whispers events load skipped:', e?.response?.data?.message || e.message);
+      }
+    };
+    load();
   }, []);
 
   const memoryEvents = getEventsForSelectedDay();
@@ -139,7 +136,6 @@ function Whispers() {
         <WhispersList
           whispers={whispers}
           selectedDate={selectedDate}
-          onMarkDone={handleMarkWhisperDone}
           onConvertToEvent={handleConvertWhisperToEvent}
           onDeleteWhisper={handleDeleteWhisper}
           onAddWhisper={handleAddWhisper}
@@ -155,6 +151,29 @@ function Whispers() {
         onClose={() => setWhisperModalOpen(false)}
         onSave={handleSaveWhisper}
         selectedDate={selectedDate}
+      />
+
+      {/* Whisper Convert Modal */}
+      <WhisperConvertModal
+        isOpen={convertModalOpen}
+        onClose={() => { setConvertModalOpen(false); setWhisperToConvert(null); }}
+        onConfirm={async (file) => {
+          try {
+            let imagePayload = undefined;
+            if (file) {
+              const toBase64 = (f) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result.split(',')[1]); reader.onerror = reject; reader.readAsDataURL(f); });
+              const base64 = await toBase64(file);
+              imagePayload = { image: { type: 'base64', data: base64, filename: file.name } };
+            }
+            const ev = await whispersApi.convertToEvent(whisperToConvert.id, imagePayload?.image ? imagePayload : undefined);
+            setConvertModalOpen(false);
+            setWhisperToConvert(null);
+            handleDeleteWhisper(whisperToConvert.id);
+            navigate('/');
+          } catch (e) {
+            console.log('Convert failed:', e?.response?.data?.message || e.message);
+          }
+        }}
       />
     </div>
   );

@@ -47,11 +47,19 @@ export default function EventModal({
           imageUrl: event.imageUrl || "",
         });
         // Load existing image if available
-        if (event.imageUrl && event.imageUrl.startsWith('data:')) {
+        if (event.imageUrl) {
           setUploadedImage({
             dataUrl: event.imageUrl,
             file: null
           });
+        } else if (event.image && event.image.data) {
+          // Handle server-side image format
+          const dataUrl = `data:image/jpeg;base64,${event.image.data}`;
+          setUploadedImage({
+            dataUrl: dataUrl,
+            file: null
+          });
+          setFormData(prev => ({ ...prev, imageUrl: dataUrl }));
         } else {
           setUploadedImage(null);
         }
@@ -119,14 +127,11 @@ export default function EventModal({
             ...formData,
             imageUrl: dataUrl
           });
-          
-          // Store in localStorage for later backend upload
-          const imageKey = `temp_image_${Date.now()}`;
-          localStorage.setItem(imageKey, dataUrl);
+          // No localStorage storage to avoid quota issues
         };
         reader.readAsDataURL(file);
       } else {
-        alert('لطفاً فقط فایل‌های تصویری انتخاب کنید');
+        alert('Please select only image files');
       }
     }
   };
@@ -148,6 +153,14 @@ export default function EventModal({
         title: formData.title.trim(),
         imageUrl: uploadedImage ? uploadedImage.dataUrl : formData.imageUrl
       };
+      // Include base64 image for API if available
+      if (uploadedImage && uploadedImage.file) {
+        eventData.image = {
+          type: 'base64',
+          data: uploadedImage.dataUrl.split(',')[1], // Remove data:image/xxx;base64, prefix
+          filename: uploadedImage.file.name
+        };
+      }
       onSave(eventData);
       onClose();
     }

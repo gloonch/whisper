@@ -24,31 +24,10 @@ function DateSelector({ events = [], whispers = [], onDateSelect, selectedDate }
     );
   };
 
-  // Get whispers for a specific date
-  const getWhispersForDate = (date) => {
-    const dateString = date.toISOString().split('T')[0];
-    
-    return whispers.filter(whisper => {
-      // Include whispers specifically for this date
-      if (whisper.date === dateString) {
-        return true;
-      }
-      
-      // Include everyday whispers if they're active
-      if (whisper.recurrence === 'everyday') {
-        const whisperDate = new Date(whisper.date);
-        return whisperDate <= date;
-      }
-      
-      return false;
-    });
-  };
-
-  // Check if date has any content (events or whispers)
+  // Red dot indicator should only reflect events presence (not whispers)
   const hasContentForDate = (date) => {
     const eventsCount = getEventsForDate(date).length;
-    const whispersCount = getWhispersForDate(date).length;
-    return eventsCount > 0 || whispersCount > 0;
+    return eventsCount > 0;
   };
 
   // Check if date is today
