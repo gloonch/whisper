@@ -82,16 +82,16 @@ export default function EditProfileModal({ isOpen, onClose, onSave, currentUser 
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 z-50">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-bg-deep border border-white/10 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+          className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl"
         >
           {/* Header */}
           <div className="flex justify-between items-center p-6 border-b border-white/10">
-            <h2 className="text-lg font-semibold text-cream">Edit Profile</h2>
+            <h2 className="text-lg font-semibold text-white">Edit Profile</h2>
             <button
               onClick={onClose}
               className="text-white/60 hover:text-white transition-colors"
@@ -107,7 +107,7 @@ export default function EditProfileModal({ isOpen, onClose, onSave, currentUser 
             {/* Avatar Upload */}
             <div className="flex flex-col items-center space-y-4">
               <div className="relative">
-                <div className="w-24 h-24 rounded-full bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center">
+                <div className="w-32 h-32 rounded-full bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center">
                   {uploadedImage ? (
                     <img
                       src={uploadedImage.dataUrl}
@@ -132,7 +132,7 @@ export default function EditProfileModal({ isOpen, onClose, onSave, currentUser 
                 )}
               </div>
 
-              <label className="cursor-pointer bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-sm text-cream transition-colors">
+              <label className="cursor-pointer bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-sm text-white transition-colors">
                 {uploadedImage ? "Change Photo" : "Upload Photo"}
                 <input
                   type="file"
@@ -149,14 +149,14 @@ export default function EditProfileModal({ isOpen, onClose, onSave, currentUser 
 
             {/* Name Input */}
             <div>
-              <label className="block text-sm font-medium text-cream mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Name
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-cream placeholder-white/40 focus:outline-none focus:border-ruby-accent transition-colors"
+                className="w-full px-4 py-3 bg-transparent border-2 border-white rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-ruby-accent transition-colors duration-500"
                 placeholder="Enter your name"
               />
               {errors.name && (
@@ -166,16 +166,16 @@ export default function EditProfileModal({ isOpen, onClose, onSave, currentUser 
 
             {/* Username Input */}
             <div>
-              <label className="block text-sm font-medium text-cream mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Username
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-mist-blue">@</span>
+                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white">@</span>
                 <input
                   type="text"
                   value={formData.username}
                   onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-                  className="w-full pl-8 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-cream placeholder-white/40 focus:outline-none focus:border-ruby-accent transition-colors"
+                  className="w-full pl-8 pr-4 py-3 bg-transparent border-2 border-white rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-ruby-accent transition-colors duration-500"
                   placeholder="username"
                 />
               </div>
@@ -189,13 +189,13 @@ export default function EditProfileModal({ isOpen, onClose, onSave, currentUser 
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-3 px-4 bg-white/5 text-white/70 rounded-xl hover:bg-white/10 transition-colors"
+                className="flex-1 py-3 px-4 text-white rounded-xl border-2 border-white/30 hover:border-white bg-white/20 transition-colors duration-500"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="flex-1 py-3 px-4 bg-ruby-accent text-white rounded-xl hover:bg-ruby-accent/80 transition-colors font-medium"
+                className="flex-1 py-3 px-4 bg-white text-black rounded-xl hover:bg-black hover:text-white hover:border-white duration-500 transition-colors font-medium"
               >
                 Save Changes
               </button>

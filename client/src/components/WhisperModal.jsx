@@ -75,7 +75,7 @@ function WhisperModal({ isOpen, onClose, onSave, selectedDate }) {
       >
         {/* Backdrop */}
         <motion.div
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          className="absolute inset-0 bg-black/40 backdrop-blur-md"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -84,7 +84,7 @@ function WhisperModal({ isOpen, onClose, onSave, selectedDate }) {
 
         {/* Modal */}
         <motion.div
-          className="relative bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto"
+          className="relative bg-white/20 backdrop-blur-xl rounded-2xl p-6 w-full max-w-lg shadow-2xl border border-white/30 max-h-[90vh] overflow-y-auto"
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -92,7 +92,7 @@ function WhisperModal({ isOpen, onClose, onSave, selectedDate }) {
         >
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-bg-deep">
+            <h2 className="text-xl font-semibold text-white">
               Add New Whisper
             </h2>
             <button
@@ -107,19 +107,19 @@ function WhisperModal({ isOpen, onClose, onSave, selectedDate }) {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Date Info */}
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium text-bg-deep">
-                Creating whisper for: {selectedDate.toLocaleDateString('en-US', {
+            {/* <div className="p-3 rounded-lg">
+              <p className="text-sm font-medium text-white">
+                {selectedDate.toLocaleDateString('en-US', {
                   weekday: 'long',
                   month: 'long',
                   day: 'numeric'
                 })}
               </p>
-            </div>
+            </div> */}
 
             {/* Category Selection */}
             <div>
-              <label className="block text-sm font-medium text-bg-deep mb-3">
+              <label className="block text-sm font-medium text-white mb-3">
                 Category
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -134,7 +134,7 @@ function WhisperModal({ isOpen, onClose, onSave, selectedDate }) {
                     className={`p-3 rounded-xl border-2 text-sm font-medium transition-all ${
                       selectedCategory === key
                         ? 'border-ruby-accent bg-ruby-accent/10 text-ruby-accent'
-                        : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                        : 'border-gray-200 hover:border-gray-300 text-white'
                     }`}
                   >
                     <div className="flex items-center space-x-2">
@@ -148,7 +148,7 @@ function WhisperModal({ isOpen, onClose, onSave, selectedDate }) {
 
             {/* Type Selection */}
             <div>
-              <label className="block text-sm font-medium text-bg-deep mb-3">
+              <label className="block text-sm font-medium text-white mb-3">
                 Whisper Type *
               </label>
               <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
@@ -160,7 +160,7 @@ function WhisperModal({ isOpen, onClose, onSave, selectedDate }) {
                     className={`p-3 rounded-xl border-2 text-left transition-all ${
                       selectedType === key
                         ? 'border-ruby-accent bg-ruby-accent/10 text-ruby-accent'
-                        : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                        : 'border-gray-200 hover:border-gray-300 text-white'
                     }`}
                   >
                     <div className="flex items-center space-x-3">
@@ -176,15 +176,15 @@ function WhisperModal({ isOpen, onClose, onSave, selectedDate }) {
             {/* Custom Text (if custom type selected) */}
             {selectedType === "CUSTOM" && (
               <div>
-                <label className="block text-sm font-medium text-bg-deep mb-2">
+                <label className="block text-sm font-medium text-white mb-2">
                   Custom Text *
                 </label>
                 <input
                   type="text"
                   value={customText}
                   onChange={(e) => setCustomText(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ruby-accent ${
-                    errors.customText ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-3 py-2 border-2 border-white bg-transparent text-white rounded-lg focus:border-ruby-accent duration-500 focus:outline-none ${
+                    errors.customText ? 'border-red-500' : ''
                   }`}
                   placeholder="e.g., Remember to smile today"
                 />
@@ -194,7 +194,7 @@ function WhisperModal({ isOpen, onClose, onSave, selectedDate }) {
 
             {/* Recurrence Selection */}
             <div>
-              <label className="block text-sm font-medium text-bg-deep mb-3">
+              <label className="block text-sm font-medium text-white mb-3">
                 Frequency
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -206,7 +206,7 @@ function WhisperModal({ isOpen, onClose, onSave, selectedDate }) {
                     className={`p-3 rounded-xl border-2 text-sm font-medium transition-all ${
                       recurrence === option.id
                         ? 'border-ruby-accent bg-ruby-accent/10 text-ruby-accent'
-                        : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                        : 'border-gray-200 hover:border-gray-300 text-white'
                     }`}
                   >
                     <div className="text-center">
@@ -223,13 +223,13 @@ function WhisperModal({ isOpen, onClose, onSave, selectedDate }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                className="flex-1 px-4 py-2 text-white rounded-lg border-2 border-white/30 hover:border-white bg-white/20 transition-colors duration-500"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="flex-1 px-4 py-2 bg-ruby-accent text-white rounded-lg hover:bg-ruby-accent/90 transition-colors"
+                className="flex-1 px-4 py-2 bg-white text-black rounded-lg hover:bg-black hover:text-white hover:border-white duration-500 transition-colors"
               >
                 Add Whisper
               </button>

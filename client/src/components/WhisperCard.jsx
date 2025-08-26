@@ -87,12 +87,12 @@ function WhisperCard({
           {
             <motion.button
               onClick={handleConvertToEvent}
-              className="p-2 rounded-lg bg-ruby-accent/20 hover:bg-ruby-accent/30 transition-colors"
+              className="p-2 rounded-lg bg-lime-200 hover:bg-lime-600 transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               title="Add to timeline"
             >
-              <svg className="w-4 h-4 text-ruby-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-lime-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
             </motion.button>

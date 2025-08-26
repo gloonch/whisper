@@ -199,7 +199,7 @@ export default function EventModal({
       >
         {/* Backdrop */}
         <motion.div
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          className="absolute inset-0 bg-black/40 backdrop-blur-md"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -208,7 +208,7 @@ export default function EventModal({
 
         {/* Modal */}
         <motion.div
-          className="relative bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl"
+          className="relative bg-white/20 backdrop-blur-xl rounded-2xl p-6 w-full max-w-md shadow-2xl border border-white/30"
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -216,7 +216,7 @@ export default function EventModal({
         >
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-bg-deep">
+            <h2 className="text-xl font-semibold text-white">
               {isViewMode ? "Event Details" : isEditMode ? "Edit Event" : "Add New Event"}
             </h2>
             <button
@@ -232,45 +232,72 @@ export default function EventModal({
           {/* Content */}
                     {isViewMode ? (
             /* View Mode */
-            <div className="space-y-6">
-              {/* Large Image Preview */}
-              <div className="text-center">
-                <div
-                  className="w-32 h-32 mx-auto rounded-2xl border-4 border-white shadow-xl flex items-center justify-center overflow-hidden"
-                  style={{ backgroundColor: getSelectedTypeColor() }}
-                >
-                  {(formData.imageUrl || uploadedImage) ? (
-                    <img
-                      src={uploadedImage ? uploadedImage.dataUrl : formData.imageUrl}
-                      alt="event"
-                      className="w-full h-full object-cover rounded-2xl"
-                    />
-                  ) : (
-                    <span className="text-5xl">
-                      {formData.type === 'MEETING' && '💕'}
-                      {formData.type === 'TRIP' && '✈️'}
-                      {formData.type === 'PARTY' && '🎉'}
-                      {formData.type === 'BIRTHDAY' && '🎂'}
-                      {formData.type === 'ANNIVERSARY' && '💐'}
-                      {formData.type === 'DATE' && '💖'}
-                      {formData.type === 'FIGHT_MAKEUP' && '🕊️'}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Event Info */}
-              <div className="text-center space-y-3">
-                <h3 className="text-2xl font-bold text-bg-deep">{formData.title}</h3>
-                <p className="text-lg text-gray-600 font-medium">{formatDateForInput(formData.date)}</p>
-                <div className="inline-flex items-center space-x-2 px-4 py-2 bg-gray-100 rounded-full">
+            <div className="space-y-7">
+              {/* Large Image Preview with Overlay Text */}
+              <div className="text-left">
+                <div className="relative w-full h-80 mx-auto rounded-2xl shadow-xl overflow-hidden">
+                  {/* Background Image or Color */}
                   <div
-                    className="w-3 h-3 rounded-full"
+                    className="absolute inset-0 flex items-center justify-center"
                     style={{ backgroundColor: getSelectedTypeColor() }}
-                  />
-                  <span className="text-sm font-medium text-gray-700">
-                    {EVENT_TYPES.find(t => t.value === formData.type)?.label}
-                  </span>
+                  >
+                    {(formData.imageUrl || uploadedImage) ? (
+                      <img
+                        src={uploadedImage ? uploadedImage.dataUrl : formData.imageUrl}
+                        alt="event"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-7xl opacity-30">
+                        {formData.type === 'MEETING' && '💕'}
+                        {formData.type === 'TRIP' && '✈️'}
+                        {formData.type === 'PARTY' && '🎉'}
+                        {formData.type === 'BIRTHDAY' && '🎂'}
+                        {formData.type === 'ANNIVERSARY' && '💐'}
+                        {formData.type === 'DATE' && '💖'}
+                        {formData.type === 'FIGHT_MAKEUP' && '🕊️'}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Dark Gradient Overlay for Text Readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+                  
+                  {/* Overlay Text Content */}
+                  <div className="absolute inset-0 flex flex-col justify-end p-6 text-white">
+                    {/* Event Type Badge */}
+                    <div className="mb-3 flex justify-start">
+                      <div className="inline-flex items-center space-x-2 px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
+                        <span className="text-lg">
+                          {formData.type === 'MEETING' && '💕'}
+                          {formData.type === 'TRIP' && '✈️'}
+                          {formData.type === 'PARTY' && '🎉'}
+                          {formData.type === 'BIRTHDAY' && '🎂'}
+                          {formData.type === 'ANNIVERSARY' && '💐'}
+                          {formData.type === 'DATE' && '💖'}
+                          {formData.type === 'FIGHT_MAKEUP' && '🕊️'}
+                        </span>
+                        <span className="text-sm font-medium text-white/90">
+                          {EVENT_TYPES.find(t => t.value === formData.type)?.label}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Title */}
+                    <h3 className="text-2xl font-bold text-start mb-2 drop-shadow-lg">
+                      {formData.title}
+                    </h3>
+                    
+                    {/* Date */}
+                    <p className="text-lg font-medium text-start text-white/90 drop-shadow-md">
+                      {new Date(formData.date).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        month: 'long', 
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -283,9 +310,9 @@ export default function EventModal({
                       onModeChange("edit");
                     }
                   }}
-                  className="flex-1 px-4 py-2 bg-ruby-accent text-white rounded-lg hover:bg-ruby-accent/90 transition-colors"
+                  className="flex-1 px-4 py-2 border-2 border-white/30 bg-transparent text-white rounded-lg hover:border-white hover:bg-ruby-accent/90 transition-colors duration-500"
                 >
-                  ✏️ Edit Event
+                  Edit Event
                 </button>
                 {onDelete && (
                   <button
@@ -294,14 +321,14 @@ export default function EventModal({
                     disabled={isDeleting}
                     className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
                   >
-                    {isDeleting ? "Deleting..." : "🗑️ Delete"}
+                    {isDeleting ? "Deleting..." : "Delete"}
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
-                >
+                  className="flex-1 px-4 py-2 bg-white text-black rounded-lg hover:bg-black hover:text-white hover:border-white duration-500 transition-colors"
+                  >
                   Close
                 </button>
               </div>
@@ -311,15 +338,15 @@ export default function EventModal({
             <form onSubmit={handleSubmit} className="space-y-4">
             {/* Title */}
             <div>
-              <label className="block text-sm font-medium text-bg-deep mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Title *
               </label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ruby-accent ${
-                  errors.title ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-3 py-2 bg-transparent border-2 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-ruby-accent ${
+                  errors.title ? 'border-red-500' : ''
                 }`}
                 placeholder="e.g., Our first date"
               />
@@ -329,15 +356,15 @@ export default function EventModal({
             {/* Date - Hidden when opened from specific date context */}
             {!hideDate && (
               <div>
-                <label className="block text-sm font-medium text-bg-deep mb-2">
+                <label className="block text-sm font-medium text-white mb-2">
                   Date *
                 </label>
                 <input
                   type="date"
                   value={formatDateForInput(formData.date)}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ruby-accent ${
-                    errors.date ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-3 py-2 bg-transparent border-2 border-white text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-ruby-accent ${
+                    errors.date ? 'border-red-500' : ''
                   }`}
                 />
                 {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date}</p>}
@@ -363,7 +390,7 @@ export default function EventModal({
 
             {/* Event Type */}
             <div>
-              <label className="block text-sm font-medium text-bg-deep mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Event Type *
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -375,7 +402,7 @@ export default function EventModal({
                     className={`p-3 rounded-lg border-2 text-sm font-medium transition-all ${
                       formData.type === type.value
                         ? 'border-ruby-accent bg-ruby-accent/10 text-ruby-accent'
-                        : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                        : 'border-gray-200 hover:border-gray-300 text-white'
                     }`}
                   >
                     <div className="flex items-center space-x-2">
@@ -393,7 +420,7 @@ export default function EventModal({
 
             {/* Image Upload */}
             <div>
-              <label className="block text-sm font-medium text-bg-deep mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Image (optional)
               </label>
               
@@ -403,7 +430,7 @@ export default function EventModal({
                     type="file"
                     accept="image/*"
                     onChange={handleFileUpload}
-                    className="hidden"
+                    className="hidden "
                     id="image-upload"
                   />
                   <label
@@ -413,7 +440,7 @@ export default function EventModal({
                     <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
-                    <span className="text-gray-600">Upload Image</span>
+                    <span className="text-white">Upload Image</span>
                   </label>
                 </div>
               ) : (
@@ -449,24 +476,24 @@ export default function EventModal({
                   type="button"
                   onClick={handleDelete}
                   disabled={isDeleting}
-                  className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-transparent border-red-600 border-2 text-red-400 rounded-lg hover:bg-red-600 hover:text-white hover:border-white transition-colors disabled:opacity-50 duration-500"
                   animate={{ scale: isDeleting ? 0.95 : 1 }}
                 >
-                  {isDeleting ? "Deleting..." : "🗑️ Delete"}
+                  {isDeleting ? "Deleting..." : "Delete"}
                 </motion.button>
               )}
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                className="flex-1 px-4 py-2 text-white rounded-lg border-2 border-white/30 hover:border-white bg-white/20 transition-colors duration-500"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="flex-1 px-4 py-2 bg-ruby-accent text-white rounded-lg hover:bg-ruby-accent/90 transition-colors"
+                className="flex-1 px-4 py-2 bg-white text-black rounded-lg hover:bg-black hover:text-white hover:border-white duration-500 transition-colors"
               >
-                {isEditMode ? "Save Changes" : "Add Event"}
+                {isEditMode ? "Save" : "Add Event"}
               </button>
             </div>
           </form>

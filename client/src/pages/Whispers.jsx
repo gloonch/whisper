@@ -7,6 +7,7 @@ import { createWhisperData } from "../components/WhisperTypes";
 import { eventsApi, relationshipsApi, whispersApi } from "../lib/api";
 import { useNavigate } from "react-router-dom";
 import WhisperConvertModal from "../components/WhisperConvertModal";
+import toast from "react-hot-toast";
 
 function Whispers() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -159,6 +160,17 @@ function Whispers() {
         onClose={() => { setConvertModalOpen(false); setWhisperToConvert(null); }}
         onConfirm={async (file) => {
           try {
+            // Validation: Check if selected date is in the future
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Reset time to start of day for comparison
+            const selectedDateOnly = new Date(selectedDate);
+            selectedDateOnly.setHours(0, 0, 0, 0);
+            
+            if (selectedDateOnly > today) {
+              toast.error("Whispers cannot be converted to events from future dates");
+              return;
+            }
+
             let imagePayload = undefined;
             if (file) {
               const toBase64 = (f) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result.split(',')[1]); reader.onerror = reject; reader.readAsDataURL(f); });
@@ -172,6 +184,7 @@ function Whispers() {
             navigate('/');
           } catch (e) {
             console.log('Convert failed:', e?.response?.data?.message || e.message);
+            toast.error(e?.response?.data?.message || "Failed to convert whisper to event");
           }
         }}
       />

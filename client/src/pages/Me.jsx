@@ -7,6 +7,7 @@ import StatsRow from "../components/StatsRow";
 import PartnerInviteBox from "../components/PartnerInviteBox";
 import PrivacyBlock from "../components/PrivacyBlock";
 import Toast from "../components/Toast";
+import { relationshipsApi, eventsApi } from "../lib/api";
 
 function Me() {
   const navigate = useNavigate();
@@ -24,10 +25,11 @@ function Me() {
 
   // Partner connection state
   const [hasPartner, setHasPartner] = useState(false);
-  const [partner] = useState({
+  const [partner, setPartner] = useState({
     name: "Partner",
     avatar: null,
   });
+  const [firstMeetingDate, setFirstMeetingDate] = useState(null);
 
   // Settings state
   const [autoPublic, setAutoPublic] = useState(false);
@@ -54,6 +56,48 @@ function Me() {
       avatar: derivedProfile?.avatar || null,
     });
   }, [derivedProfile?.name, derivedProfile?.username, derivedProfile?.avatar]);
+
+  // Load relationship and events data
+  useEffect(() => {
+    const loadRelationshipData = async () => {
+      try {
+        // Check if user has an active relationship
+        const rel = await relationshipsApi.getCurrent();
+        const partners = rel?.partners || [];
+        const partnerData = partners.find(p => p.userId !== derivedProfile?.id) || partners[0];
+        
+        if (rel?.id && partnerData) {
+          setHasPartner(true);
+          setPartner({
+            name: partnerData.name || partnerData.username || "Partner",
+            avatar: partnerData.avatar || null,
+          });
+
+          // Load events to find the first meeting date
+          const events = await eventsApi.listMine({ limit: 100, offset: 0 });
+          if (events && events.length > 0) {
+            // Sort events by date to find the earliest one
+            const sortedEvents = events.sort((a, b) => new Date(a.date) - new Date(b.date));
+            const earliestEvent = sortedEvents[0];
+            setFirstMeetingDate(earliestEvent.date?.split('T')[0]);
+          }
+        } else {
+          setHasPartner(false);
+          setPartner({ name: "Partner", avatar: null });
+          setFirstMeetingDate(null);
+        }
+      } catch (e) {
+        // No relationship found
+        setHasPartner(false);
+        setPartner({ name: "Partner", avatar: null });
+        setFirstMeetingDate(null);
+      }
+    };
+
+    if (derivedProfile?.id) {
+      loadRelationshipData();
+    }
+  }, [derivedProfile?.id]);
 
   const showToastMessage = (message) => {
     setToastMessage(message);
@@ -121,10 +165,7 @@ function Me() {
     }
   };
 
-  // First meeting date logic: if no partner yet, days should be 0
-  // Pass today's date so PartnerBox calculates 0 days
-  const todayIso = new Date().toISOString().split("T")[0];
-  const firstMeetingDate = hasPartner ? "2021-01-01" : todayIso;
+  // First meeting date logic is now handled by real data from API
 
   return (
     <div className="flex flex-col h-full bg-bg-deep overflow-y-auto">
@@ -132,15 +173,21 @@ function Me() {
         {/* Profile Header */}
         <ProfileHeader user={user} onUserUpdate={handleUserUpdate} />
 
-        {/* Partner Box - days zero until a connection exists */}
-        <PartnerBox partner={partner} firstMeetingDate={firstMeetingDate} />
+        {/* Partner Box - only shown when user has an active relationship */}
+        {hasPartner && firstMeetingDate && (
+          <>
+          <PartnerBox partner={partner} firstMeetingDate={firstMeetingDate} />
+          <StatsRow
+            memoriesCount={stats.memories}
+            whispersCount={stats.whispers}
+            publicCount={stats.public}
+          />  
+        </>
+          
+        )}
 
         {/* Stats Row - all zeros until real events exist */}
-        <StatsRow
-          memoriesCount={stats.memories}
-          whispersCount={stats.whispers}
-          publicCount={stats.public}
-        />
+        
 
         {/* Partner Invite System */}
         <PartnerInviteBox />
