@@ -65,8 +65,9 @@ func (uc *eventUseCase) GetEventByID(ctx context.Context, userID primitive.Objec
 		log.Printf("[EVENT][GET][ERROR] user=%s id=%s err=%v", userID.Hex(), id.Hex(), err)
 		return nil, err
 	}
-	// Authorization: creator or shared; for now allow creator only
-	if ev.CreatedBy != userID {
+	// Authorization: allow any partner in the same active relationship
+	rel, relErr := uc.relRepo.FindCurrentByUserID(ctx, userID)
+	if relErr != nil || rel.ID != ev.RelationshipID {
 		log.Printf("[EVENT][GET][DENY] user=%s id=%s", userID.Hex(), id.Hex())
 		return nil, ErrForbidden
 	}
@@ -81,7 +82,9 @@ func (uc *eventUseCase) UpdateEventByID(ctx context.Context, userID primitive.Ob
 		log.Printf("[EVENT][UPDATE][ERROR] find id=%s err=%v", id.Hex(), err)
 		return nil, err
 	}
-	if ev.CreatedBy != userID {
+	// Authorization: allow any partner in the same active relationship
+	rel, relErr := uc.relRepo.FindCurrentByUserID(ctx, userID)
+	if relErr != nil || rel.ID != ev.RelationshipID {
 		log.Printf("[EVENT][UPDATE][DENY] user=%s id=%s", userID.Hex(), id.Hex())
 		return nil, ErrForbidden
 	}
