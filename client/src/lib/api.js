@@ -70,3 +70,15 @@ export const whispersApi = {
     return res.data;
   }
 };
+
+// Users API
+export const usersApi = {
+  getProfile: async () => {
+    const res = await axios.get('/users/profile');
+    return res.data; // UserProfileResponse
+  },
+  updateProfile: async (payload) => {
+    const res = await axios.put('/users/profile', payload);
+    return res.data; // UserProfileResponse
+  },
+};

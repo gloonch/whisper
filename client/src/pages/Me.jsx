@@ -7,7 +7,7 @@ import StatsRow from "../components/StatsRow";
 import PartnerInviteBox from "../components/PartnerInviteBox";
 import PrivacyBlock from "../components/PrivacyBlock";
 import Toast from "../components/Toast";
-import { relationshipsApi, eventsApi } from "../lib/api";
+import { relationshipsApi, eventsApi, usersApi } from "../lib/api";
 
 function Me() {
   const navigate = useNavigate();
@@ -15,6 +15,8 @@ function Me() {
 
   // Derive profile from authenticated user ({ token, user } or direct)
   const derivedProfile = authUser?.user || authUser || { name: "User", username: "user", avatar: null };
+  
+  console.log('🔍 Auth Debug in Me.jsx:', { authUser, derivedProfile });
 
   // Local editable user profile state (initialized from auth)
   const [user, setUser] = useState({
@@ -48,14 +50,32 @@ function Me() {
   // Mock public events (keep local for now)
   const [publicEvents, setPublicEvents] = useState([]);
 
-  // If auth user changes (login), sync profile UI
+  // Load user profile from API
   useEffect(() => {
-    setUser({
-      name: derivedProfile?.name || "User",
-      username: derivedProfile?.username || "user",
-      avatar: derivedProfile?.avatar || null,
-    });
-  }, [derivedProfile?.name, derivedProfile?.username, derivedProfile?.avatar]);
+    const loadUserProfile = async () => {
+      try {
+        const profileData = await usersApi.getProfile();
+        setUser({
+          name: profileData.name || "User",
+          username: profileData.username || "user",
+          avatar: profileData.avatar || null,
+        });
+      } catch (error) {
+        console.error("Failed to load user profile:", error);
+        // Fallback to auth data if API fails
+        setUser({
+          name: derivedProfile?.name || "User",
+          username: derivedProfile?.username || "user",
+          avatar: derivedProfile?.avatar || null,
+        });
+      }
+    };
+
+    if (authUser && derivedProfile?.id) {
+      console.log('🚀 Loading user profile for:', derivedProfile.id);
+      loadUserProfile();
+    }
+  }, [authUser, derivedProfile?.id]);
 
   // Load relationship and events data
   useEffect(() => {
@@ -94,10 +114,11 @@ function Me() {
       }
     };
 
-    if (derivedProfile?.id) {
+    if (authUser && derivedProfile?.id) {
+      console.log('🚀 Loading relationship data for:', derivedProfile.id);
       loadRelationshipData();
     }
-  }, [derivedProfile?.id]);
+  }, [authUser, derivedProfile?.id]);
 
   const showToastMessage = (message) => {
     setToastMessage(message);
@@ -112,11 +133,34 @@ function Me() {
     }
   }, []);
 
-  // Save user data to localStorage (UI-only profile for demo editing)
-  const handleUserUpdate = (updatedUser) => {
-    setUser(updatedUser);
-    localStorage.setItem("maha_user", JSON.stringify(updatedUser));
-    showToastMessage("Profile updated successfully!");
+  // Save user data via API
+  const handleUserUpdate = async (updatedUser) => {
+    try {
+      // Prepare API payload (only send changed fields)
+      const payload = {};
+      if (updatedUser.name !== user.name) {
+        payload.name = updatedUser.name;
+      }
+      if (updatedUser.avatar !== user.avatar) {
+        payload.avatar = updatedUser.avatar;
+      }
+
+      // Call API if there are changes
+      if (Object.keys(payload).length > 0) {
+        const updatedProfile = await usersApi.updateProfile(payload);
+        setUser({
+          name: updatedProfile.name || "User",
+          username: updatedProfile.username || "user",
+          avatar: updatedProfile.avatar || null,
+        });
+        showToastMessage("Profile updated successfully!");
+      } else {
+        showToastMessage("No changes to save");
+      }
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+      showToastMessage("Failed to update profile. Please try again.");
+    }
   };
 
   // Handle auto-public toggle

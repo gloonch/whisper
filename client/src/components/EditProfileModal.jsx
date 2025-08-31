@@ -59,12 +59,6 @@ export default function EditProfileModal({ isOpen, onClose, onSave, currentUser 
     if (!formData.name.trim()) {
       newErrors.name = "Name is required";
     }
-    
-    if (!formData.username.trim()) {
-      newErrors.username = "Username is required";
-    } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
-      newErrors.username = "Username can only contain letters, numbers, and underscores";
-    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -164,7 +158,7 @@ export default function EditProfileModal({ isOpen, onClose, onSave, currentUser 
               )}
             </div>
 
-            {/* Username Input */}
+            {/* Username Input (Read-only) */}
             <div>
               <label className="block text-sm font-medium text-white mb-2">
                 Username
@@ -174,14 +168,12 @@ export default function EditProfileModal({ isOpen, onClose, onSave, currentUser 
                 <input
                   type="text"
                   value={formData.username}
-                  onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-                  className="w-full pl-8 pr-4 py-3 bg-transparent border-2 border-white rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-ruby-accent transition-colors duration-500"
+                  readOnly
+                  className="w-full pl-8 pr-4 py-3 bg-white/5 border-2 border-white/30 rounded-xl text-white/70 placeholder-white/40 cursor-not-allowed"
                   placeholder="username"
                 />
               </div>
-              {errors.username && (
-                <p className="text-red-400 text-sm mt-1">{errors.username}</p>
-              )}
+              <p className="text-white/50 text-xs mt-1">Username cannot be changed</p>
             </div>
 
             {/* Action Buttons */}

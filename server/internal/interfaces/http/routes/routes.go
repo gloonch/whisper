@@ -31,12 +31,14 @@ func SetupRoutes(router *gin.Engine, db *database.MongoDB, cfg *config.Config) {
 	relationshipUseCase := usecases.NewRelationshipUseCase(relationshipRepo, userRepo, inviteRepo)
 	eventUseCase := usecases.NewEventUseCase(eventRepo, relationshipRepo)
 	whisperUsecase := usecases.NewWhisperUseCase(whisperRepo, relationshipRepo, eventRepo)
+	userUseCase := usecases.NewUserUseCase(userRepo)
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(authUseCase)
 	relationshipHandler := handlers.NewRelationshipHandler(relationshipUseCase)
 	eventHandler := handlers.NewEventHandler(eventUseCase)
 	whisperHandler := handlers.NewWhisperHandler(whisperUsecase)
+	userHandler := handlers.NewUserHandler(userUseCase)
 
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
@@ -89,17 +91,13 @@ func SetupRoutes(router *gin.Engine, db *database.MongoDB, cfg *config.Config) {
 			}
 		}
 
-		// User routes -  placeholder
-		userRoutes := v1.Group("/users")
+		// User routes (protected)
+		userRoutes := protected.Group("/users")
 		{
-			userRoutes.GET("/profile", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
-			userRoutes.PUT("/profile", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
-			})
+			userRoutes.GET("/profile", userHandler.GetProfile)
+			userRoutes.PUT("/profile", userHandler.UpdateProfile)
 			userRoutes.PUT("/settings", func(c *gin.Context) {
-				c.JSON(501, gin.H{"message": "Not implemented yet"})
+				c.JSON(501, gin.H{"message": "Settings not implemented yet"})
 			})
 		}
 

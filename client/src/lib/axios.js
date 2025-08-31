@@ -17,9 +17,16 @@ instance.interceptors.request.use(
         const token = parsed?.accessToken || parsed?.token; // prefer accessToken (server response)
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
+          // console.log('🔑 Token found for request:', config.url, 'Token:', token.substring(0, 20) + '...');
+        } else {
+          console.log('❌ No token found in user data:', parsed);
         }
+      } else {
+        console.log('❌ No user data in localStorage');
       }
-    } catch (_) {}
+    } catch (err) {
+      console.log('❌ Error parsing user data:', err);
+    }
     return config;
   },
   (error) => Promise.reject(error)
@@ -29,7 +36,15 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    const url = error.config?.url;
+    
+    console.log('❌ API Error:', status, url, error.response?.data);
+    
+    // Only redirect on 401 for non-relationship endpoints
+    // or if it's actually an auth issue (not "no relationship found")
+    if (status === 401 && !url?.includes('/relationships/current')) {
+      console.log('🚪 Redirecting to login due to auth error');
       localStorage.removeItem('whisper_user');
       window.location.href = '/login';
     }
