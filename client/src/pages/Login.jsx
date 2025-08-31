@@ -53,10 +53,12 @@ const Login = () => {
           <p className="text-sm text-white/60 mt-1">Welcome back. Please sign in to continue.</p>
         </div>
 
-        <form className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-5" onSubmit={handleSubmit}>
+        <form className="bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl p-6 space-y-5" onSubmit={handleSubmit}>
           <div className="space-y-1.5">
-            <label htmlFor="username" className="block text-sm text-white/80">
-              Username
+            <label 
+              htmlFor="username" 
+              className="block text-sm text-white/80">
+                Username
             </label>
             <input
               id="username"
@@ -66,7 +68,7 @@ const Login = () => {
               required
               value={formData.username}
               onChange={handleChange}
-              className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-ruby-accent focus:border-transparent transition"
+              className={`w-full px-3 py-2 bg-transparent border-2 border-white text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-ruby-accent`}
               placeholder="@your_username"
               dir="ltr"
             />
@@ -84,7 +86,7 @@ const Login = () => {
               required
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-ruby-accent focus:border-transparent transition"
+              className="w-full px-3 py-2 bg-transparent border-2 border-white text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-ruby-accent"
               placeholder="Your password"
               dir="ltr"
             />
@@ -93,8 +95,8 @@ const Login = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2.5 rounded-lg bg-ruby-accent text-white font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
+            className="w-full flex-1 px-4 py-2 bg-white text-black rounded-lg hover:bg-black hover:text-white hover:border-white duration-500 transition-colors"
+            >
             {isLoading ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
