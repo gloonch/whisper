@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Toast from "./Toast";
 import { relationshipsApi } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import { useGlobalToast } from "../context/ToastContext";
 
 export default function PartnerInviteBox() {
   const { user: authUser } = useAuth();
@@ -16,13 +16,19 @@ export default function PartnerInviteBox() {
   });
   
   const [inputCode, setInputCode] = useState("");
-  const [toastMessage, setToastMessage] = useState('');
-  const [showToast, setShowToast] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const showToastMessage = (message) => {
-    setToastMessage(message);
-    setShowToast(true);
+  // Global Toast hook
+  const { showSuccess, showError, showInfo } = useGlobalToast();
+
+  const showToastMessage = (message, type = 'success') => {
+    if (message.includes('Failed') || message.includes('error')) {
+      showError("Partnership", message);
+    } else if (message.includes('copied') || message.includes('generated')) {
+      showInfo("Partnership", message);
+    } else {
+      showSuccess("Partnership", message);
+    }
   };
 
   // Fetch current relationship on mount
@@ -254,12 +260,7 @@ export default function PartnerInviteBox() {
         </AnimatePresence>
       </div>
 
-      {/* Toast */}
-      <Toast
-        message={toastMessage}
-        isVisible={showToast}
-        onClose={() => setShowToast(false)}
-      />
+
     </>
   );
 } 

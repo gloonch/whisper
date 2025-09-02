@@ -16,7 +16,7 @@
 }
 
 .animated-gradient-btn {
-  background: linear-gradient(-45deg, #1812c8, #dc2626, #eb6601, #6219e1, #02a974, #e30a6c);
+  background: linear-gradient(-45deg, #1812c8, #a30000, #eb6601, #5d00fe, #02a974, #0acae3);
   background-size: 400% 400%;
-  animation: gradient-shift 3s ease infinite;
+  animation: gradient-shift 8s ease infinite ;
 }

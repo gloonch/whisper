@@ -41,9 +41,12 @@ instance.interceptors.response.use(
     
     console.log('❌ API Error:', status, url, error.response?.data);
     
-    // Only redirect on 401 for non-relationship endpoints
-    // or if it's actually an auth issue (not "no relationship found")
-    if (status === 401 && !url?.includes('/relationships/current')) {
+    // Only redirect on 401 for authenticated endpoints
+    // Don't redirect for auth endpoints (login/register) or relationship endpoints
+    const isAuthEndpoint = url?.includes('/auth/login') || url?.includes('/auth/register');
+    const isRelationshipEndpoint = url?.includes('/relationships/current');
+    
+    if (status === 401 && !isAuthEndpoint && !isRelationshipEndpoint) {
       console.log('🚪 Redirecting to login due to auth error');
       localStorage.removeItem('whisper_user');
       window.location.href = '/login';

@@ -6,8 +6,8 @@ import PartnerBox from "../components/PartnerBox";
 import StatsRow from "../components/StatsRow";
 import PartnerInviteBox from "../components/PartnerInviteBox";
 import PrivacyBlock from "../components/PrivacyBlock";
-import Toast from "../components/Toast";
 import { relationshipsApi, eventsApi, usersApi } from "../lib/api";
+import { useGlobalToast } from "../context/ToastContext";
 
 function Me() {
   const navigate = useNavigate();
@@ -36,9 +36,8 @@ function Me() {
   // Settings state
   const [autoPublic, setAutoPublic] = useState(false);
   
-  // Toast state
-  const [toastMessage, setToastMessage] = useState("");
-  const [showToast, setShowToast] = useState(false);
+  // Global Toast hook
+  const { showSuccess, showError, showInfo } = useGlobalToast();
 
   // Stats counters should be zero until user has real events
   const [stats, setStats] = useState({
@@ -120,9 +119,14 @@ function Me() {
     }
   }, [authUser, derivedProfile?.id]);
 
-  const showToastMessage = (message) => {
-    setToastMessage(message);
-    setShowToast(true);
+  const showToastMessage = (message, type = 'success') => {
+    if (type === 'error') {
+      showError("Error", message);
+    } else if (type === 'info') {
+      showInfo("Info", message);
+    } else {
+      showSuccess("Success", message);
+    }
   };
 
   // Load only UI prefs from localStorage (not auth)
@@ -155,11 +159,11 @@ function Me() {
         });
         showToastMessage("Profile updated successfully!");
       } else {
-        showToastMessage("No changes to save");
+        showToastMessage("No changes to save", 'info');
       }
     } catch (error) {
       console.error("Failed to update profile:", error);
-      showToastMessage("Failed to update profile. Please try again.");
+      showToastMessage("Failed to update profile. Please try again.", 'error');
     }
   };
 
@@ -167,7 +171,7 @@ function Me() {
   const handleAutoPublicChange = (newValue) => {
     setAutoPublic(newValue);
     localStorage.setItem("maha_auto_public", newValue.toString());
-    showToastMessage(newValue ? "Auto-public enabled for new events" : "Auto-public disabled");
+    showToastMessage(newValue ? "Auto-public enabled for new events" : "Auto-public disabled", 'info');
   };
 
   // Handle event privacy change (local only)
@@ -187,6 +191,9 @@ function Me() {
 
       // Auth logout
       logout();
+      
+      // Show success message
+      showSuccess('Authentication', 'Signed out successfully');
 
       // Redirect to login
       navigate("/login", { replace: true });
@@ -247,12 +254,7 @@ function Me() {
         />
       </div>
 
-      {/* Toast */}
-      <Toast
-        message={toastMessage}
-        isVisible={showToast}
-        onClose={() => setShowToast(false)}
-      />
+
     </div>
   );
 }

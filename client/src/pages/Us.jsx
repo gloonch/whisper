@@ -5,11 +5,11 @@ import ExploreBar from "../components/ExploreBar";
 import ExploreGrid from "../components/ExploreGrid";
 import ExploreModal from "../components/ExploreModal";
 import TodoListView from "../components/TodoListView";
-import Toast from "../components/Toast";
 import AlertDialog from "../components/AlertDialog";
 import { usePublicEvents } from "../hooks/usePublicEvents";
 import { useTodoList } from "../hooks/useTodoList";
 import { eventsApi, relationshipsApi } from "../lib/api";
+import { useGlobalToast } from "../context/ToastContext";
 
 function Us() {
   const [events, setEvents] = useState([]);
@@ -19,13 +19,14 @@ function Us() {
   const { publicEvents, addToPublicEvents, removeFromPublicEvents } = usePublicEvents();
   const { todoList, addToTodoList, completeTodo } = useTodoList();
   
+  // Global Toast hook
+  const { showSuccess, showError } = useGlobalToast();
+  
   // UI State
   const [showExploreGrid, setShowExploreGrid] = useState(false);
   const [showTodoList, setShowTodoList] = useState(false);
   const [showExploreModal, setShowExploreModal] = useState(false);
   const [selectedExploreEvent, setSelectedExploreEvent] = useState(null);
-  const [toastMessage, setToastMessage] = useState('');
-  const [showToast, setShowToast] = useState(false);
   const [showRelAlert, setShowRelAlert] = useState(false);
   const navigate = useNavigate();
 
@@ -58,9 +59,12 @@ function Us() {
     load();
   }, []);
 
-  const showToastMessage = (message) => {
-    setToastMessage(message);
-    setShowToast(true);
+  const showToastMessage = (message, isError = false) => {
+    if (isError) {
+      showError("Error", message);
+    } else {
+      showSuccess("Success", message);
+    }
   };
 
   // Check if user has a relationship before allowing event creation
@@ -103,7 +107,7 @@ function Us() {
       setEvents(prev => [...prev, mapped]);
       showToastMessage('Event created successfully');
     } catch (e) {
-      showToastMessage('Failed to create event. Please try again.');
+      showToastMessage('Failed to create event. Please try again.', true);
     }
   };
 
@@ -131,7 +135,7 @@ function Us() {
       setEvents(prev => prev.map(e => e.id === mapped.id ? mapped : e));
       showToastMessage('Event updated successfully');
     } catch (e) {
-      showToastMessage('Failed to update event');
+      showToastMessage('Failed to update event', true);
     }
   };
 
@@ -142,7 +146,7 @@ function Us() {
       setEvents(prev => prev.filter(e => e.id !== eventId));
       showToastMessage('Event deleted successfully');
     } catch (e) {
-      showToastMessage('Failed to delete event');
+      showToastMessage('Failed to delete event', true);
     }
   };
 
@@ -259,12 +263,7 @@ function Us() {
         onTodoComplete={handleTodoComplete}
       />
 
-      {/* Toast */}
-      <Toast
-        message={toastMessage}
-        isVisible={showToast}
-        onClose={() => setShowToast(false)}
-      />
+
 
       {/* Relationship required dialog */}
       <AlertDialog

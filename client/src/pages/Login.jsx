@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import toast from 'react-hot-toast';
+import { useGlobalToast } from '../context/ToastContext';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +10,7 @@ const Login = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const { login, isAuthenticated } = useAuth();
+  const { showError, showSuccess } = useGlobalToast();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
@@ -30,16 +31,19 @@ const Login = () => {
     e.preventDefault();
 
     if (!formData.username || !formData.password) {
-      toast.error('Please fill in all fields');
+      showError('Validation', 'Please fill in all fields');
       return;
     }
 
     setIsLoading(true);
     try {
-      await login(formData);
+      const result = await login(formData);
+      showSuccess('Authentication', 'Signed in successfully');
       navigate('/');
     } catch (error) {
-      // Error handled in AuthContext
+      console.log('Login error caught:', error.message);
+      showError('Login Failed', error.message || 'Failed to sign in');
+      // Stay on login page to allow retry
     } finally {
       setIsLoading(false);
     }
@@ -65,7 +69,6 @@ const Login = () => {
               name="username"
               type="text"
               autoComplete="username"
-              required
               value={formData.username}
               onChange={handleChange}
               className={`w-full px-3 py-2 bg-transparent border-2 border-white text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-ruby-accent`}
@@ -83,7 +86,6 @@ const Login = () => {
               name="password"
               type="password"
               autoComplete="current-password"
-              required
               value={formData.password}
               onChange={handleChange}
               className="w-full px-3 py-2 bg-transparent border-2 border-white text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-ruby-accent"

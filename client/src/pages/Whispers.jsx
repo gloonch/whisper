@@ -7,7 +7,7 @@ import { createWhisperData } from "../components/WhisperTypes";
 import { eventsApi, relationshipsApi, whispersApi } from "../lib/api";
 import { useNavigate } from "react-router-dom";
 import WhisperConvertModal from "../components/WhisperConvertModal";
-import toast from "react-hot-toast";
+import { useGlobalToast } from "../context/ToastContext";
 
 function Whispers() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -17,6 +17,9 @@ function Whispers() {
   const [events, setEvents] = useState([]);
   const [whispers, setWhispers] = useState([]);
   const navigate = useNavigate();
+  
+  // Global Toast hook
+  const { showError, showSuccess } = useGlobalToast();
 
   const handleDateSelect = (date) => {
     setSelectedDate(date);
@@ -45,8 +48,10 @@ function Whispers() {
         isDone: created.isDone || false
       };
       setWhispers(prev => [...prev, mapped]);
+      showSuccess('Whispered', '');
     } catch (e) {
       console.log('Whisper create failed:', e?.response?.data?.message || e.message);
+      showError('Whisper', 'Failed to add whisper');
     }
   };
 
@@ -61,8 +66,10 @@ function Whispers() {
     try {
       await whispersApi.delete(whisperId);
       setWhispers(prev => prev.filter(w => w.id !== whisperId));
+      showSuccess('Whisper', 'Whisper deleted');
     } catch (e) {
       console.log('Whisper delete failed:', e?.response?.data?.message || e.message);
+      showError('Whisper', 'Failed to delete whisper');
     }
   };
 
@@ -167,7 +174,7 @@ function Whispers() {
             selectedDateOnly.setHours(0, 0, 0, 0);
             
             if (selectedDateOnly > today) {
-              toast.error("Whispers cannot be converted to events from future dates");
+              showError("Conversion Error", "Whispers cannot be converted to events from future dates");
               return;
             }
 
@@ -181,13 +188,16 @@ function Whispers() {
             setConvertModalOpen(false);
             setWhisperToConvert(null);
             handleDeleteWhisper(whisperToConvert.id);
+            showSuccess('Conversion', 'Whisper converted to event successfully');
             navigate('/');
           } catch (e) {
             console.log('Convert failed:', e?.response?.data?.message || e.message);
-            toast.error(e?.response?.data?.message || "Failed to convert whisper to event");
+            showError("Conversion Failed", e?.response?.data?.message || "Failed to convert whisper to event");
           }
         }}
       />
+
+
     </div>
   );
 }

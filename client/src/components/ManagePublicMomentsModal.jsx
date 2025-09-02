@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Toast from "./Toast";
+import { useGlobalToast } from "../context/ToastContext";
 
 export default function ManagePublicMomentsModal({ 
   isOpen, 
@@ -8,12 +8,11 @@ export default function ManagePublicMomentsModal({
   publicEvents = [],
   onEventPrivacyChange
 }) {
-  const [toastMessage, setToastMessage] = useState('');
-  const [showToast, setShowToast] = useState(false);
+  // Global Toast hook
+  const { showSuccess } = useGlobalToast();
 
   const showToastMessage = (message) => {
-    setToastMessage(message);
-    setShowToast(true);
+    showSuccess("Privacy", message);
   };
 
   const handleMakePrivate = (event) => {
@@ -124,12 +123,7 @@ export default function ManagePublicMomentsModal({
         </div>
       </AnimatePresence>
 
-      {/* Toast */}
-      <Toast
-        message={toastMessage}
-        isVisible={showToast}
-        onClose={() => setShowToast(false)}
-      />
+
     </>
   );
 } 

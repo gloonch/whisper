@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from "./context/AuthContext";
+import { ToastProvider } from "./context/ToastContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import MobileContainer from "./MobileContainer";
 import Navbar from "./components/Navbar";
@@ -15,19 +15,8 @@ function App() {
   return (
     <div className=" min-h-screen max-h-screen flex items-center justify-center">
       <Router>
-        <AuthProvider>
-          <Toaster 
-            position="top-center"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#fff',
-                color: '#333',
-                borderRadius: '10px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-              },
-            }}
-          />
+        <ToastProvider>
+          <AuthProvider>
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={
@@ -101,7 +90,8 @@ function App() {
             {/* 404 route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </AuthProvider>
+          </AuthProvider>
+        </ToastProvider>
       </Router>
     </div>
   );

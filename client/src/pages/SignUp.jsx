@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import toast from 'react-hot-toast';
+import { useGlobalToast } from '../context/ToastContext';
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -13,6 +13,7 @@ const SignUp = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const { register, isAuthenticated } = useAuth();
+  const { showError, showSuccess } = useGlobalToast();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
@@ -31,22 +32,22 @@ const SignUp = () => {
 
   const validateForm = () => {
     if (!formData.name || !formData.username || !formData.email || !formData.password) {
-      toast.error('Please fill in all fields');
+      showError('Validation', 'Please fill in all fields');
       return false;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
+      showError('Validation', 'Passwords do not match');
       return false;
     }
 
     if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+      showError('Validation', 'Password must be at least 6 characters');
       return false;
     }
 
     if (formData.username.length < 3) {
-      toast.error('Username must be at least 3 characters');
+      showError('Validation', 'Username must be at least 3 characters');
       return false;
     }
 
@@ -64,9 +65,12 @@ const SignUp = () => {
     try {
       const { confirmPassword, ...registerData } = formData;
       await register(registerData);
+      showSuccess('Registration', 'Account created successfully');
       navigate('/');
     } catch (error) {
-      // Error handled in AuthContext
+      console.log('SignUp error caught:', error.message);
+      showError('Registration Failed', error.message || 'Failed to create account');
+      // Stay on signup page to allow retry
     } finally {
       setIsLoading(false);
     }

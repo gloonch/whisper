@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from '../lib/axios';
-import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
 
@@ -40,12 +39,28 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       localStorage.setItem('whisper_user', JSON.stringify(userData));
       
-      toast.success('Signed in successfully');
+      // Success handled by component
       return userData;
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Failed to sign in';
-      toast.error(errorMessage);
-      throw error;
+      // Don't show toast here, let the component handle it
+      // Just format the error and re-throw
+      if (error.response?.data?.message === 'invalid username or password') {
+        const customError = new Error('Username or password is incorrect');
+        customError.originalError = error;
+        throw customError;
+      } else if (error.response?.status === 401) {
+        const customError = new Error('Username or password is incorrect');
+        customError.originalError = error;
+        throw customError;
+      } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+        const customError = new Error('Network error. Please check your connection.');
+        customError.originalError = error;
+        throw customError;
+      } else {
+        const customError = new Error(error.response?.data?.message || 'Failed to sign in');
+        customError.originalError = error;
+        throw customError;
+      }
     }
   };
 
@@ -58,19 +73,34 @@ export const AuthProvider = ({ children }) => {
       setUser(registeredUser);
       localStorage.setItem('whisper_user', JSON.stringify(registeredUser));
       
-      toast.success('Account created successfully');
+      // Success handled by component
       return registeredUser;
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Failed to create account';
-      toast.error(errorMessage);
-      throw error;
+      // Don't show toast here, let the component handle it
+      if (error.response?.data?.message === 'username already exists') {
+        const customError = new Error('Username is already taken');
+        customError.originalError = error;
+        throw customError;
+      } else if (error.response?.data?.message === 'email already exists') {
+        const customError = new Error('Email is already registered');
+        customError.originalError = error;
+        throw customError;
+      } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+        const customError = new Error('Network error. Please check your connection.');
+        customError.originalError = error;
+        throw customError;
+      } else {
+        const customError = new Error(error.response?.data?.message || 'Failed to create account');
+        customError.originalError = error;
+        throw customError;
+      }
     }
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('whisper_user');
-    toast.success('Signed out');
+    // Logout success handled by UI
   };
 
   const value = {
