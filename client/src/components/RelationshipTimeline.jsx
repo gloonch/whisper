@@ -14,7 +14,7 @@ const EVENT_COLORS = {
   NOW: "#FFFFFF",
 };
 
-export default function RelationshipTimeline({ events = [], onEventsChange, onTogglePublic, showToast, onCreateEvent, onUpdateEvent, onDeleteEvent }) {
+export default function RelationshipTimeline({ events = [], onEventsChange, onTogglePublic, showToast, onCreateEvent, onUpdateEvent, onDeleteEvent, onNoRelationship }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [modalMode, setModalMode] = useState("add"); // "add" or "edit" or "view"
@@ -22,10 +22,27 @@ export default function RelationshipTimeline({ events = [], onEventsChange, onTo
   // Sort events by date (oldest first, newest last)
   const sortedEvents = [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  const handleAddEvent = () => {
-    setSelectedEvent(null);
-    setModalMode("add");
-    setModalOpen(true);
+  const handleAddEvent = async () => {
+    // Check if user has a relationship before opening modal
+    try {
+      // This will be a quick API call to validate relationship exists
+      if (onNoRelationship) {
+        const hasRelationship = await onNoRelationship();
+        if (!hasRelationship) {
+          return; // Don't open modal if no relationship
+        }
+      }
+      
+      setSelectedEvent(null);
+      setModalMode("add");
+      setModalOpen(true);
+    } catch (error) {
+      console.error('Error checking relationship:', error);
+      // If API fails, still allow opening modal
+      setSelectedEvent(null);
+      setModalMode("add");
+      setModalOpen(true);
+    }
   };
 
   const handleEditEvent = (event) => {
@@ -95,20 +112,21 @@ export default function RelationshipTimeline({ events = [], onEventsChange, onTo
   if (events.length === 0) {
     return (
       <>
-        <div className="w-full flex justify-center py-12">
+        <div className="w-full flex justify-center py-12 mt-[50%]">
           <div className="text-center max-w-sm">
             <div className="text-6xl mb-4">🕊️</div>
             <h3 className="text-lg font-medium text-white/80 mb-2">
-              No memories here yet…
+              This space holds your untold moments
             </h3>
             <p className="text-sm text-white/60 mb-6">
-              Start your story with the first meeting.
+              Write the first chapter together
             </p>
             <button
               onClick={handleAddEvent}
-              className="px-6 py-3 bg-ruby-accent text-white rounded-full hover:bg-ruby-accent/90 transition-colors font-medium"
+              className="animated-gradient-btn relative px-6 py-3 text-white rounded-2xl hover:border-2 hover:border-white duration-200 font-medium overflow-hidden group"
             >
-              ✨ Add First Meeting
+              <span className="relative z-10">First Meeting</span>
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </button>
           </div>
         </div>

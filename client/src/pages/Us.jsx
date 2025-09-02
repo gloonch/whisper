@@ -63,6 +63,22 @@ function Us() {
     setShowToast(true);
   };
 
+  // Check if user has a relationship before allowing event creation
+  const handleCheckRelationship = async () => {
+    try {
+      await relationshipsApi.getCurrent();
+      return true; // Relationship exists
+    } catch (e) {
+      const msg = e?.response?.data?.message || '';
+      if (msg.toLowerCase().includes('no current relationship') || e?.response?.status === 400 || e?.response?.status === 404 || e?.response?.status === 409 || e?.response?.status === 500) {
+        setShowRelAlert(true);
+        return false; // No relationship
+      }
+      // For other errors, allow opening modal (network issues, etc.)
+      return true;
+    }
+  };
+
   // Create event handler used by RelationshipTimeline modal
   const handleCreateEventFromTimeline = async (eventData) => {
     const payload = {
@@ -87,12 +103,7 @@ function Us() {
       setEvents(prev => [...prev, mapped]);
       showToastMessage('Event created successfully');
     } catch (e) {
-      const msg = e?.response?.data?.message || '';
-      if (msg.toLowerCase().includes('no current relationship') || e?.response?.status === 400 || e?.response?.status === 409 || e?.response?.status === 500) {
-        setShowRelAlert(true);
-      // } else {
-        // showToastMessage('Failed to create event');
-      }
+      showToastMessage('Failed to create event. Please try again.');
     }
   };
 
@@ -217,6 +228,7 @@ function Us() {
           onCreateEvent={handleCreateEventFromTimeline}
           onUpdateEvent={handleUpdateEventFromTimeline}
           onDeleteEvent={handleDeleteEventFromTimeline}
+          onNoRelationship={handleCheckRelationship}
         />
       </div>
 

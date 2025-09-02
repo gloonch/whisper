@@ -1,3 +1,22 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Animated gradient button */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-gradient-btn {
+  background: linear-gradient(-45deg, #1812c8, #dc2626, #eb6601, #6219e1, #02a974, #e30a6c);
+  background-size: 400% 400%;
+  animation: gradient-shift 3s ease infinite;
+}
