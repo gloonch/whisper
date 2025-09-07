@@ -1,14 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 function WhisperConvertModal({ isOpen, onClose, onConfirm }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
+  const fileInputRef = useRef(null);
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      // Clean up preview URL to prevent memory leaks
+      if (preview) {
+        URL.revokeObjectURL(preview);
+      }
+      setFile(null);
+      setPreview(null);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }, [isOpen, preview]);
 
   if (!isOpen) return null;
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
+    
+    // Clean up previous preview URL
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
+    
     setFile(f || null);
     if (f) {
       const url = URL.createObjectURL(f);
@@ -46,7 +69,13 @@ function WhisperConvertModal({ isOpen, onClose, onConfirm }) {
         >
           <h2 className="text-xl font-semibold text-white mb-4">Add to Timeline</h2>
           <p className="text-sm text-white/40 mb-4">Upload an optional photo to include with this event.</p>
-          <input type="file" accept="image/*" onChange={handleFileChange} className="mb-4" />
+          <input 
+            ref={fileInputRef}
+            type="file" 
+            accept="image/*" 
+            onChange={handleFileChange} 
+            className="mb-4" 
+          />
           {preview && (
             <div className="mb-4">
               <img src={preview} alt="Preview" className="w-full rounded-lg" />
